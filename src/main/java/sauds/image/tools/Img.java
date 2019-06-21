@@ -152,6 +152,41 @@ public class Img extends ImgInterface {
 	}
 	return out;
     }
+    public long[] sumChannelValues() {
+	long[][] rawSum = new long[channels][threadCount];
+	
+	MPT.run(threadCount, 0, height, 1, new MTPListRunnable() {
+	    @Override
+	    public void iter(int procID, int y, Object val) {
+		for(int x=0; x<width; x++) {
+		    for(int c=0; c<channels; c++) {
+			rawSum[c][procID] += getInt(x, y, c);
+		    }
+		}
+	    }
+	});
+	long[] out = new long[channels];
+	for(int i=0; i<width; i++) {
+	    for(int j=0; j<channels; j++) {
+		out[i] += rawSum[i][j];
+	    }
+	}
+	return out;
+    }
+    public long sumAllValues() {
+	long[] rawSum = new long[threadCount];
+	
+	MPT.run(threadCount, 0, values.length, 1, new MTPListRunnable() {
+	    @Override
+	    public void iter(int procID, int i, Object val) {
+		rawSum[procID] += getInt(i);
+	    }
+	});
+	long out = 0;
+	for(int i=0; i<rawSum.length; i++)
+	    out += rawSum[i];
+	return out;
+    }
     
     /**
      * Efficiently reduces the image scale by half
