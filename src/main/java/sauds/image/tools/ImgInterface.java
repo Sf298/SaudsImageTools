@@ -657,4 +657,39 @@ public abstract class ImgInterface {
 	    return prevVal % value;
 	}
     }
+
+    @Override
+    public int hashCode() {
+	int hash = 7;
+	hash = 89 * hash + this.width;
+	hash = 89 * hash + this.height;
+	hash = 89 * hash + this.channels;
+	return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+	if (this == obj) {
+	    return true;
+	}
+	if (obj == null) {
+	    return false;
+	}
+	if (getClass() != obj.getClass()) {
+	    return false;
+	}
+	final ImgInterface other = (ImgInterface) obj;
+	if (this.width != other.width) {
+	    return false;
+	}
+	if (this.height != other.height) {
+	    return false;
+	}
+	if (this.channels != other.channels) {
+	    return false;
+	}
+	return true;
+    }
+    
+    
 }

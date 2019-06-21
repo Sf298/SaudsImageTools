@@ -5,6 +5,7 @@
  */
 package sauds.image.tools;
 
+import java.util.Objects;
 import multiprocessing.tools.MPT;
 import multiprocessing.tools.MTPListRunnable;
 import static sauds.image.tools.ImgInterface.threadCount;
@@ -143,6 +144,47 @@ public class ROI extends ImgInterface {
 	final int y = idx / channels;
 	final int z = idx % channels;
 	return new int[]{ x, y, z };
+    }
+
+    @Override
+    public int hashCode() {
+	int hash = 5;
+	hash = 23 * hash + Objects.hashCode(this.img);
+	hash = 23 * hash + this.x;
+	hash = 23 * hash + this.y;
+	hash = 23 * hash + this.c;
+	hash = 23 * hash + this.valuesLen;
+	return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+	if (this == obj) {
+	    return true;
+	}
+	if (obj == null) {
+	    return false;
+	}
+	if (getClass() != obj.getClass()) {
+	    return false;
+	}
+	final ROI other = (ROI) obj;
+	if (this.x != other.x) {
+	    return false;
+	}
+	if (this.y != other.y) {
+	    return false;
+	}
+	if (this.c != other.c) {
+	    return false;
+	}
+	if (this.valuesLen != other.valuesLen) {
+	    return false;
+	}
+	if (!Objects.equals(this.img, other.img)) {
+	    return false;
+	}
+	return true;
     }
     
 }

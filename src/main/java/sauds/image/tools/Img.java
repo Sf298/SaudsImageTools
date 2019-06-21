@@ -35,6 +35,9 @@ public class Img extends ImgInterface {
 	values = Arrays.copyOf(im.values, im.values.length);
     }
     public Img(BufferedImage img) {
+	if(img == null)
+	    throw new NullPointerException("Could not read image, img may be null");
+	
 	width = img.getWidth();
 	height = img.getHeight();
 	if(img.getType()==BufferedImage.TYPE_BYTE_BINARY
@@ -318,6 +321,35 @@ public class Img extends ImgInterface {
 	});
 	this.ops.clear();
 	return out;
+    }
+
+    @Override
+    public int hashCode() {
+	int hash = 3;
+	hash = 17 * hash + super.hashCode();
+	hash = 17 * hash + Arrays.hashCode(this.values);
+	return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+	if (this == obj) {
+	    return true;
+	}
+	if (obj == null) {
+	    return false;
+	}
+	if (getClass() != obj.getClass()) {
+	    return false;
+	}
+	final Img other = (Img) obj;
+	if(!super.equals(other)) {
+	    return false;
+	}
+	if (!Arrays.equals(this.values, other.values)) {
+	    return false;
+	}
+	return true;
     }
     
 }
