@@ -239,8 +239,6 @@ public class Img extends ImgInterface {
 	    public void iter(int procID, int y, Object val) {
 		for(int x=0; x<width; x++) {
 		    int sum = 0;
-		    if(x == 1333 && y == 2550)
-			System.out.println(sum+"/"+channels+"="+((byte)(sum/channels)));
 		    for(int c=0; c<channels; c++)
 			sum += getInt(x, y, c);
 		    out.setVal(x, y, 0, (byte)(sum/channels));
