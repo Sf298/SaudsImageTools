@@ -98,8 +98,6 @@ public class Img extends ImgInterface {
     }
     @Override
     public byte getVal(int x, int y, int c) {
-	//if(to1D(x,y,c) >= values.length)
-	  //  System.out.println(x);
 	return values[to1D(x,y,c)];
     }
     @Override
