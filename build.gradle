@@ -25,6 +25,6 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.Sf298:Sauds-Toolbox:a9ade71a652f0bd2bc0bf63bbee09d797e0fd2a1'
+    compile 'com.github.Sf298:Sauds-Toolbox:44cf8807fc38b1359258a120fba55da73d45831c'
     testCompile group: 'junit', name: 'junit', version: '4.10'
 }

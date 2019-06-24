@@ -16,8 +16,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import multiprocessing.tools.MPT;
-import multiprocessing.tools.MTPListRunnable;
+import sauds.toolbox.multiprocessing.tools.MPT;
+import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
 
 /**
  *

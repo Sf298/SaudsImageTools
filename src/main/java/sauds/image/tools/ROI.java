@@ -6,9 +6,9 @@
 package sauds.image.tools;
 
 import java.util.Objects;
-import multiprocessing.tools.MPT;
-import multiprocessing.tools.MTPListRunnable;
 import static sauds.image.tools.ImgInterface.threadCount;
+import sauds.toolbox.multiprocessing.tools.MPT;
+import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
 
 /**
  *
