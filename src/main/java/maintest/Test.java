@@ -6,7 +6,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import sauds.image.tools.external.AdvancedxMaths;
+import sauds.image.tools.Blob;
+import sauds.image.tools.external.FrameTimer;
 import sauds.image.tools.ImgInterface;
+import sauds.image.tools.ImgViewer;
+import sauds.image.tools.Kernel;
+import sauds.image.tools.external.ProfilingTools;
 import sauds.image.tools.ROI;
 import sauds.toolbox.multiprocessing.tools.MPT;
 import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
@@ -19,9 +27,12 @@ import sauds.toolbox.timer.Timer;
 public class Test {
     
     public static void main(String[] args) throws IOException, InterruptedException {
-		Thread.sleep(5000);
-		System.out.println("started");
-		testLaplacianPyramid();
+		System.out.println("waiting");
+		//System.out.println(Arrays.toString(AdvancedxMaths.rref(-3+Math.sqrt(11), 2, 1, 3+Math.sqrt(11))));
+		//testImgIconWrapper();
+		
+		Img im = Img.createNew(new File("C:\\Users\\demon\\Pictures\\SimplePhotoConverter\\IMG_0059.png"));
+		im.removeBadPixels().save("png", new File("C:\\Users\\demon\\Pictures\\SimplePhotoConverter\\IMG_0059_2.png"));
     }
     
     public static void test1b() throws IOException {
@@ -40,66 +51,49 @@ public class Test {
 		});
     }
     
-	public static void test1a() throws IOException {
+	public static void testRunOp() throws IOException {
 		//Img im2 = new Img(new File("C:\\Users\\demon\\Desktop\\New Bitmap Image.jpg"));
-		Img im1 = new Img(new File("C:\\Users\\demon\\Desktop\\New Bitmap Image.jpg"));
-		im1.show();
-		Img out = im1.runOp(new ImgInterface.Op() {
+		Img im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\New Bitmap Image.jpg"));
+		//im1.show();
+		Img out = im1.runOp(new Img.Op() {
 			@Override
 			public int run(int threadID, int pos, int prevVal) {
 				return prevVal>>>1;
 			}
 		});
-		out.show();
-    }
-    
-    public static void testLaplacianPyramid() throws IOException {
-		Img.threadCount = 1;
-		Img im1 = new Img(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
-		Img im2 = new Img(new File("C:\\Users\\demon\\Desktop\\New Bitmap Image.jpg"));
-		im1.insert(0, 0, im2);
-		//im1 = im1.downScale2x();
-		im1 = im1.squareifyPow2();
-		System.out.println(Arrays.toString(im1.getShape()));
-		ArrayList<Img> lap = im1.laplacianPyramid(4);
-		im1 = Img.laplacianPyramid(lap).sub(im1);
-		System.out.println("[min,max] = "+Arrays.toString(im1.minMax()));
-		
-		//im1.save("jpg", new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.255.png"));
-		//Img2.showImgs(im1);
-		//im1.save("png", new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.252.png"));
+		//out.show();
     }
     
     public static void test2() throws IOException {
-		Img im1 = new Img(new File("C:\\Users\\demon\\Desktop\\New Bitmap Image.jpg"));
+		Img im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\New Bitmap Image.jpg"));
 		/*ArrayList<Img> lap = im1.laplacianPyramid(4);
 		//Img2.showImgs(lap);
 		Img.showImgs(Img.laplacianPyramid(lap));*/
     }
 	
     private static void test3() throws IOException {
-		Img im1 = new Img(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
+		Img im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
 		for(int i = 0; i < 10; i++) {
 			Timer t1 = new Timer("T1");
 			for (int j = 0; j < 20; j++) {
-//				im1.add(j).sub(j);
+				im1.add(j).sub(j);
 			}
 			t1.print();
 		}
     }
 	
-    private static void test4() throws IOException {
-		Img im1 = new Img(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
+    private static void testToGrey() throws IOException {
+		ImgInterface im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
 		im1 = im1.downScale2x().downScale2x().downScale2x();
-		//im1.show();
+		im1.show();
 		im1 = im1.toGrey();
 		im1.show();
     }
     
     private static void test6() throws IOException {
 		Img.threadCount = 1;
-		Img im = new Img(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png")).downScale2x().downScale2x().downScale2x();
-		Img im2 = im.downScale2x().downScale2x();
+		ImgInterface im = Img.createNew(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png")).downScale2x().downScale2x().downScale2x();
+		ImgInterface im2 = im.downScale2x().downScale2x();
 		int targetW = im2.getWidth(), targetH = im2.getHeight();
 		//int targetW = im.getWidth()+1, targetH = im.getHeight()+1;
 		//im.rescale(targetW, targetH);
@@ -133,19 +127,133 @@ public class Test {
 		//Img2.showImgs(im3.upscale(4), im3.rescale(im3.getWidth()*4, im3.getHeight()*4));
 
 		// mixed scale
-		Img im3 = im;
-		Img.showImgs(im3.downScale2x().downScale2x(), im3.rescale(2, 1/2.0));
+		ImgInterface im3 = im;
+		ImgViewer.showAll(im3.downScale2x().downScale2x(), im3.rescale(2, 1/2.0));
     }
     
     private static void testRoiToImg() throws IOException {
-		Img im1 = new Img(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
-		im1 = im1.downScale2x().downScale2x();
+		Img im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
+		im1 = (Img) im1.downScale2x().downScale2x();
 		int w = im1.getWidth();
 		int h = im1.getHeight();
 		ROI roi = new ROI(w/4, w/2, h/4, h/2, 0, im1.getChannels(), im1);
 		roi.show();
-		Img im2 = roi.toImg();
+		Img im2 = (Img) roi.toImg();
 		im2.show();
+	}
+    
+    private static void testRotation() throws IOException, InterruptedException {
+		ImgInterface im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
+		im1 = im1.rescale(1.0/16, 1.0/8);
+		im1 = im1.downScale2x();
+		//im1 = im1.downScale2x();
+		im1.show();
+		ImgInterface im2 = im1;
+		ImgViewer imv = new ImgViewer("rotate test");
+		FrameTimer ft = new FrameTimer(45) {
+			@Override
+			public void frameCall(int frameNo, double lagMs) {
+				int i = (frameNo*3) % 360; 
+				ImgInterface im3 = im2.rotate(i/180.0*Math.PI);
+				imv.setImg(0,im3);
+				imv.setImg(1,im3);
+				imv.repaint();
+				System.out.println(dTime()+", "+getDelay());
+			}
+		};
+		ft.start();
+	}
+	
+	private static void testFlip() throws IOException {
+		ImgInterface im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
+		im1 = im1.rescale(1.0/16, 1.0/16);
+		im1.show();
+		im1 = im1.rescale(-1, 1);
+		im1.show();
+	}
+	
+	private static void testPixelPlacement() throws IOException {
+		Img im1 = Img.createNew(3, 3, 3);
+		im1.setInt(0, 0, 0, 1);
+		im1.setInt(0, 0, 1, 2);
+		im1.setInt(0, 0, 2, 3);
+		im1.setInt(1, 0, 0, 4);
+		im1.setInt(1, 0, 1, 5);
+		im1.setInt(1, 0, 2, 6);
+		im1.setInt(2, 0, 0, 7);
+		im1.setInt(2, 0, 1, 8);
+		im1.setInt(2, 0, 2, 9);
+		System.out.println(Arrays.toString(im1.getValues()));
+	}
+	
+	private static void testProfiler() throws IOException, InterruptedException {
+		Thread.sleep(5000);
+		for(int i=0; i<100000000; i++) {
+			mult(i);
+			profi(i);
+		}
+		System.out.println(ProfilingTools.getTotalTime(0));
+	}
+	private static int mult(int i) {
+		return i * 3;
+	}
+	private static int profi(int i) {
+		ProfilingTools.start(0);
+		ProfilingTools.stop(0);
+		return i;
+	}
+	
+	private static void testSpeed() throws IOException, InterruptedException {
+		//Thread.sleep(5000);
+		Img im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
+		
+		ProfilingTools.start(0);
+		im1.add(1);
+		ProfilingTools.stopAndPrintMeanTime(0, "add");
+		ProfilingTools.start(1);
+		im1.div(2);
+		ProfilingTools.stopAndPrintMeanTime(1, "div");
+		ProfilingTools.start(2);
+		ArrayList<ImgInterface> lap = im1.laplacianPyramid(4);
+		ProfilingTools.stopAndPrintMeanTime(2, "lap1");
+		ProfilingTools.start(3);
+		Img.laplacianPyramid(lap);
+		ProfilingTools.stopAndPrintMeanTime(3, "lap2");
+		ProfilingTools.start(4);
+		im1.toGrey();
+		ProfilingTools.stopAndPrintMeanTime(4, "grey");
+		ProfilingTools.start(5);
+		im1.sumAllValues();
+		ProfilingTools.stopAndPrintMeanTime(5, "sum");
+	}
+
+	private static void testConv() throws IOException, InterruptedException {
+		Img.threadCount = 1;
+		Thread.sleep(5000);
+		Img im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\2019-03-29 23.04.25.png"));
+		im1 = (Img) im1.toGrey().rescale(0.25, 0.25);
+		im1.show();
+		System.out.println(Kernel.boxBlur(1).isSeparable());
+		Img.threadCount = 1;
+		for (int i = 0; i < 1; i++) {
+			ProfilingTools.start(0);
+			im1 = im1.convolve(Kernel.gaussian3x3(), Img.BORDER_IGNORE, 1, Img.CONV_MEAN, true, 0);
+			im1 = im1.convolve(Kernel.edgeDetection4(), Img.BORDER_IGNORE, 1, Img.CONV_SUM, false, 127);
+			//im1.convolve(Kernel.sobelY(), Img.BORDER_IGNORE, 1, Img.CONV_MEAN, true, 0).show();
+			im1.show();
+			System.out.println(Arrays.toString(im1.minMax()));
+			im1 = (Img) im1.greaterThanEq(160).mult(255);
+			ArrayList<Blob> blobs = im1.detectBlobs(true);
+			for(Blob blob : blobs) {
+				if(blob.getSize()<20
+						|| blob.getMajorAxis()/blob.getMinorAxis() > 5)
+					im1.setBlobValue(blob, 0, 0);
+			}
+			ProfilingTools.stop(0);
+		}
+		ProfilingTools.printMeanTime(0, "conv");
+		Img.threadCount = 1;
+		im1.show();
 	}
 	
 }

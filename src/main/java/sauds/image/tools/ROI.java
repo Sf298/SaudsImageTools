@@ -5,6 +5,7 @@
  */
 package sauds.image.tools;
 
+import java.awt.Color;
 import java.util.Objects;
 import static sauds.image.tools.ImgInterface.threadCount;
 import sauds.toolbox.multiprocessing.tools.MPT;
@@ -16,17 +17,32 @@ import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
  */
 public class ROI extends ImgInterface {
     
-    private Img img;
+    private ImgInterface img;
     private final int x,y,c;
     private final int valuesLen;
 
-    public ROI(int x, int w, int y, int h, int c, int d, Img img) {
+    public ROI(int x, int w, int y, int h, int c, int d, ImgInterface img) {
 		this.x = x; width = w;
 		this.y = y; height = h;
 		this.c = c; channels = d;
 		this.valuesLen = w*h*d;
 		this.img = img;
     }
+	
+	@Override
+	public ROI copy() {
+		return new ROI(x, width, y, height, c, channels, img);
+	}
+
+	@Override
+	public ImgInterface create(int width, int height, int channels) {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public ImgInterface create(int width, int height, int channels, byte initialValue) {
+		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	}
     
     @Override
     public byte getVal(int i) {
@@ -67,6 +83,11 @@ public class ROI extends ImgInterface {
 			return getVal(x,y,c);
 			case BORDER_INNER:
 			return getVal(x,y,c);
+			/*case BORDER_WRAP:
+				while(x<0) x += width; if(x >= width) x = x%width;
+				while(y<0) y += height; if(y >= height) y = y%height;
+				while(c<0) c += channels; if(c >= channels) c = c%channels;
+				return getVal(x,y,c);*/
 		}
 		return null;
     }
@@ -77,6 +98,13 @@ public class ROI extends ImgInterface {
 		int y = coords[1];
 		int c = coords[2];
 		return img.getInt(x+this.x, y+this.y, c+this.c);
+    }
+    public Integer getInt(int i, int borderHandling) {
+		int[] coords = to3D(i);
+		int x = coords[0];
+		int y = coords[1];
+		int c = coords[2];
+		return img.getInt(x+this.x, y+this.y, c+this.c, borderHandling);
     }
 	@Override
 	public void setInt(int i, int val) {
@@ -94,6 +122,10 @@ public class ROI extends ImgInterface {
     public Integer getInt(int x, int y, int c, int borderHandling) {
 		return getVal(x, y, c, borderHandling) & 0xFF;
     }
+	@Override
+	public Color getColor(int x, int y) {
+		return img.getColor(x+this.x, y+this.y);
+	}
     
     @Override
     public int[] minMax() {
@@ -114,8 +146,8 @@ public class ROI extends ImgInterface {
     }
     
 	@Override
-	public Img runOp(Op op) {
-		Img out = new Img(width, height, channels);
+	public ImgInterface runOp(Op op) {
+		ImgInterface out = img.create(width, height, channels);
 		MPT.run(threadCount, 0, valuesLen, 1, new MTPListRunnable<Byte>() {
 			@Override
 			public void iter(int procID, int idx, Byte val) {
@@ -129,8 +161,8 @@ public class ROI extends ImgInterface {
 	 * Creates a copy of the ROI as an Img.
 	 * @return 
 	 */
-    public Img toImg() {
-		Img out = new Img(width, height, channels);
+    public ImgInterface toImg() {
+		ImgInterface out = img.create(width, height, channels);
 		out.insert(0, 0, this);
 		return out;
     }
