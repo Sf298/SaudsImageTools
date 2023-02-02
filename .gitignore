@@ -33,3 +33,5 @@ hs_err_pid*
 /.gradle/
 /build/
 /.nb-gradle/
+
+/.idea

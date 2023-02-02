@@ -60,7 +60,7 @@ public class Img extends ImgInterface {
 		out.channels = channels;
 		//idxCache1 = Arrays.copyOf(im.idxCache1, im.idxCache1.length);
 		//idxCache2 = Arrays.copyOf(im.idxCache2, im.idxCache2.length);
-		out.values = Arrays.copyOf(values, out.values.length);
+		out.values = Arrays.copyOf(values, values.length);
 		return out;
     }
 	/**
@@ -294,6 +294,17 @@ public class Img extends ImgInterface {
 		});
 		return out;
     }
+	public static int median(ArrayList<Integer> list) {
+		Collections.sort(list);
+		int s = list.size();
+		int hs = s>>>1;
+		if((s&1) == 0) {
+			return (list.get(hs-1) + list.get(hs))>>>1;
+		} else {
+			return list.get(hs);
+		}
+	}
+	
 	/**
 	 * Convolve this image with a kernel.
 	 * @param k the kernel
@@ -336,6 +347,7 @@ public class Img extends ImgInterface {
 		});
 		return out;
     }
+	
 	private int convRegion(Kernel k, int cx, int cy, int c, int borderHandling, int operation) {
 		if(operation == CONV_SUM) {
 			int sum = 0;
@@ -376,76 +388,6 @@ public class Img extends ImgInterface {
 		}
 		return 0;
 	}
-	/**
-	 * Calculates the median of an ArrayList of Integers.
-	 * @param list
-	 * @return 
-	 */
-	public static int median(ArrayList<Integer> list) {
-		Collections.sort(list);
-		int s = list.size();
-		int hs = s>>>1;
-		if((s&1) == 0) {
-			return (list.get(hs-1) + list.get(hs))>>>1;
-		} else {
-			return list.get(hs);
-		}
-	}
-	
-	/**
-	 * Performs a 3x3 median blur on the image.
-	 * @return 
-	 */
-	public Img removeBadPixels() {
-		return convolve(Kernel.boxBlur(1), BORDER_IGNORE, 1, CONV_MEDIAN);
-	}
-	protected Integer isBadPixel(int x, int y, int c) {
-		int aa = getInt(x, y, c);
-		int bb = getInt(x+1, y, c);
-		int cc = getInt(x, y+1, c);
-		int dd = getInt(x-1, y, c);
-		int ee = getInt(x, y-1, c);
-		
-		int mean = 0;
-		int count = 0;
-		if(aa == 255) {
-			if(bb < 250) {
-				count++;
-				mean += bb;
-			}
-			if(cc < 250) {
-				count++;
-				mean += cc;
-			}
-			if(dd < 250) {
-				count++;
-				mean += dd;
-			}
-			if(ee < 250) {
-				count++;
-				mean += ee;
-			}
-		} else if(aa == 0) {
-			if(bb > 10) {
-				count++;
-				mean += bb;
-			}
-			if(cc > 10) {
-				count++;
-				mean += cc;
-			}
-			if(dd > 10) {
-				count++;
-				mean += dd;
-			}
-			if(ee > 10) {
-				count++;
-				mean += ee;
-			}
-		}
-		return (count>=3) ? mean/count : null;
-	}
-	
     private Img convolveSeparableH(int[] k, int borderHandling, int stride, int operation, boolean abs, int add) {
 		Img out;
 		int wMod;
@@ -525,6 +467,11 @@ public class Img extends ImgInterface {
 		});
 		return out;
     }
+	/**
+	 * Calculates the median of an ArrayList of Integers.
+	 * @param list
+	 * @return 
+	 */
     private synchronized int convArrs(int[] k, Integer[] roi, int op) {
 		if(op == CONV_SUM) {
 			int sum = 0;
@@ -561,6 +508,122 @@ public class Img extends ImgInterface {
 			return median(values);
 		}
 		return 0;
+	}
+	
+	//<editor-fold defaultstate="collapsed" desc="region blur">
+	/*private Img regionBlur(Kernel k, int operation) {
+		Img out = create(width, height, channels);;
+		int wMod = 0;
+		int hMod = 0;
+		
+		MPT.run(threadCount, hMod, height-hMod, 1, new MTPListRunnable() {
+			@Override
+			public void iter(int procID, int y, Object val) {
+				int endX = width-wMod;
+				for(int x=wMod; x<endX; x++) {
+					for(int c=0; c<channels; c++) {
+						int finalVal = convRegion(k, x, y, c, BORDER_IGNORE, operation);
+						out.setInt(x, y, c, Math.max(0, Math.min(finalVal, 255)));
+					}
+				}
+			}
+		});
+		return out;
+	}
+	private int convRegionInBlob(Kernel k, Blob blob, int cx, int cy, int c, int operation) {
+		if(operation == CONV_SUM) {
+			int sum = 0;
+			for(int dy=-k.getHW(); dy<=k.getHW(); dy++) {
+				int tempY = cy+dy;
+				for(int dx=-k.getHH(); dx<=k.getHH(); dx++) {
+					if(blob.==null) continue;
+					int imVal = getInt(cx+dx, tempY, c);
+					sum += k.getC(dx, dy) * imVal;
+				}
+			}
+			return sum;
+		} else if(operation == CONV_MEAN) {
+			int sum = 0;
+			int count = 0;
+			for(int dy=-k.getHW(); dy<=k.getHW(); dy++) {
+				int tempY = cy+dy;
+				for(int dx=-k.getHH(); dx<=k.getHH(); dx++) {
+					Integer imVal = getInt(cx+dx, tempY, c, borderHandling);
+					if(imVal==null) continue;
+					int kV = k.getC(dx, dy);
+					sum += kV * imVal;
+					count+=Math.abs(kV);
+				}
+			}
+			return sum/count;
+		} else if(operation == CONV_MEDIAN) {
+			ArrayList<Integer> values = new ArrayList<>(k.getSize());
+			for(int dy=-k.getHW(); dy<=k.getHW(); dy++) {
+				int tempY = cy+dy;
+				for(int dx=-k.getHH(); dx<=k.getHH(); dx++) {
+					Integer imVal = getInt(cx+dx, tempY, c, borderHandling);
+					if(imVal==null) continue;
+					values.add(k.getC(dx, dy) * imVal);
+				}
+			}
+			return median(values);
+		}
+		return 0;
+	}*/
+//</editor-fold>
+	
+	/**
+	 * Performs a 3x3 median blur on the image.
+	 * @return 
+	 */
+	public Img removeBadPixels() {
+		return convolve(Kernel.boxBlur(1), BORDER_IGNORE, 1, CONV_MEDIAN);
+	}
+	protected Integer isBadPixel(int x, int y, int c) {
+		int aa = getInt(x, y, c);
+		int bb = getInt(x+1, y, c);
+		int cc = getInt(x, y+1, c);
+		int dd = getInt(x-1, y, c);
+		int ee = getInt(x, y-1, c);
+		
+		int mean = 0;
+		int count = 0;
+		if(aa == 255) {
+			if(bb < 250) {
+				count++;
+				mean += bb;
+			}
+			if(cc < 250) {
+				count++;
+				mean += cc;
+			}
+			if(dd < 250) {
+				count++;
+				mean += dd;
+			}
+			if(ee < 250) {
+				count++;
+				mean += ee;
+			}
+		} else if(aa == 0) {
+			if(bb > 10) {
+				count++;
+				mean += bb;
+			}
+			if(cc > 10) {
+				count++;
+				mean += cc;
+			}
+			if(dd > 10) {
+				count++;
+				mean += dd;
+			}
+			if(ee > 10) {
+				count++;
+				mean += ee;
+			}
+		}
+		return (count>=3) ? mean/count : null;
 	}
     
 	

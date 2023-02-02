@@ -445,11 +445,19 @@ public abstract class ImgInterface {
     
     /**
      * Resize this image to the given width/height
-     * @param w the new width
-     * @param h the new height
+     * @param w the new width, if negative flips the Img, if null maintains aspect ratio
+     * @param h the new height, if negative flips the Img, if null maintains aspect ratio
      * @return 
      */
-    public ImgInterface resize(int w, int h) {
+    public ImgInterface resize(Integer w, Integer h) {
+		if(w==null && h==null) {
+			throw new NullPointerException("Both inputs are null");
+		} else if (w==null) {
+			w = (h * width)/height;
+		} else if (h==null) {
+			h = (w * height)/width;
+		}
+		
 		int ww = Math.abs(w);
 		int hh = Math.abs(h);
 		boolean flipX = w<0;
@@ -473,6 +481,16 @@ public abstract class ImgInterface {
 			}
 		});
 		return out;
+    }
+	
+    /**
+     * Resize this image to the same size of the given Img.
+	 * @param im the image who's size will be matched
+     * @return a new image with the content of this Img but the size of the
+	 * provided Img
+     */
+    public ImgInterface resizeTo(Img im) {
+		return resize(im.getWidth(), im.getHeight());
     }
     
     /**
@@ -913,8 +931,7 @@ public abstract class ImgInterface {
 	 * @param value 
 	 */
 	public void setBlobValue(Blob b, int channel, int value) {
-		for(int i=0; i<b.getSize(); i++) {
-			int[] p = b.getPoint(i);
+		for(int[] p : b) {
 			setInt(p[0], p[1], 0, 0);
 		}
 	}
@@ -1284,6 +1301,21 @@ public abstract class ImgInterface {
 			@Override
 			public int run(int threadID, int pos, int prevVal) {
 				return prevVal % value.getInt(pos);
+			}
+		});
+	}
+	public ImgInterface merge(Color col, double alpha) {
+		return runOp(new Op() {
+			@Override
+			public int run(int threadID, int pos, int prevVal) {
+				int c = pos % channels;
+				switch(c) {
+					case 0: return (int) linInterp(prevVal, col.getRed(), alpha);
+					case 1: return (int) linInterp(prevVal, col.getGreen(), alpha);
+					case 2: return (int) linInterp(prevVal, col.getBlue(), alpha);
+					case 3: return (int) linInterp(prevVal, col.getAlpha(), alpha);
+					default: return 0;
+				}
 			}
 		});
 	}

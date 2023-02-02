@@ -8,19 +8,20 @@ package sauds.image.tools;
 import sauds.image.tools.external.AdvancedxMaths;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * The container class for generating and storing non-rectangular regions of
  * non-zero values.
  * @author saud
  */
-public class Blob {
+public class Blob implements Iterable<int[]> {
 	
 	private long sumX = 0;
 	private int minX = Integer.MAX_VALUE, maxX = 0;
 	private long sumY = 0;
 	private int minY = Integer.MAX_VALUE, maxY = 0;
-	private ArrayList<int[]> points = new ArrayList<>();
+	private ArrayList<Long> points = new ArrayList<>();
 	
 	/**
 	 * Add a new point to this blob.
@@ -28,7 +29,7 @@ public class Blob {
 	 * @param y 
 	 */
 	public void addPoint(int x, int y) {
-		points.add(new int[]{x,y});
+		points.add(catInt(x, y));
 		sumX += x;
 		if(x < minX) minX = x;
 		if(x > maxX) maxX = x;
@@ -39,12 +40,13 @@ public class Blob {
 	}
 	
 	/**
-	 * Gets a coordinate from this blob.
-	 * @param i the index of the coordinate (in order of points added).
+	 * Checks if a coordinate is contained in this blob.
+	 * @param x
+	 * @param y 
 	 * @return 
 	 */
-	public int[] getPoint(int i) {
-		return points.get(i);
+	public boolean containsPoint(int x, int y) {
+		return points.contains(catInt(x, y));
 	}
 	
 	/**
@@ -111,8 +113,8 @@ public class Blob {
 		double maxX = Double.NEGATIVE_INFINITY;
 		double minY = Double.POSITIVE_INFINITY;
 		double maxY = Double.NEGATIVE_INFINITY;
-		for (int[] point : points) {
-			double[] rotated = AdvancedxMaths.rotateTransform(point[0], point[1], angle);
+		for (long p : points) {
+			double[] rotated = AdvancedxMaths.rotateTransform(splitLongA(p), splitLongB(p), angle);
 			minX = Math.min(minX, rotated[0]);
 			maxX = Math.max(maxX, rotated[0]);
 			minY = Math.min(minY, rotated[1]);
@@ -165,9 +167,12 @@ public class Blob {
 		if(covCacheXY != null) return covCacheXY;
 		
 		double[][] t1 = new double[getSize()][2];
-		for(int i=0; i<getSize(); i++)
-			for(int j=0; j<2; j++)
-				t1[i][j] = points.get(i)[j];
+		int i = 0;
+		for(Long point : points) {
+			t1[i][0] = splitLongA(point);
+			t1[i][1] = splitLongB(point);
+			i++;
+		}
 		
 		return covCacheXY = AdvancedxMaths.covariance(t1);
 	}
@@ -175,9 +180,11 @@ public class Blob {
 		if(covCacheX != null) return covCacheX;
 		
 		double[][] t1 = new double[getSize()][2];
-		for(int i=0; i<getSize(); i++) {
-			t1[i][0] = points.get(i)[0];
-			t1[i][1] = points.get(i)[0];
+		int i = 0;
+		for(Long point : points) {
+			t1[i][0] = splitLongA(point);
+			t1[i][1] = t1[i][0];
+			i++;
 		}
 		return covCacheX = AdvancedxMaths.covariance(t1);
 	}
@@ -185,9 +192,11 @@ public class Blob {
 		if(covCacheY != null) return covCacheY;
 		
 		double[][] t1 = new double[getSize()][2];
-		for(int i=0; i<getSize(); i++) {
-			t1[i][0] = points.get(i)[1];
-			t1[i][1] = points.get(i)[1];
+		int i = 0;
+		for(Long point : points) {
+			t1[i][0] = splitLongB(point);
+			t1[i][1] = t1[i][0];
+			i++;
 		}
 		return covCacheY = AdvancedxMaths.covariance(t1);
 	}
@@ -196,6 +205,35 @@ public class Blob {
 		covCacheX = null;
 		covCacheY = null;
 		angle = minorAxis = majorAxis = null;
+	}
+	
+	private final long mask = ~((long)Integer.MIN_VALUE<<1);
+	private long catInt(int a, int b) {
+		return ((long)a<<Integer.SIZE) | (b & mask);
+	}
+	private int splitLongA(long lon) {
+		return (int)((lon & ~mask)>>>Integer.SIZE);
+	}
+	private int splitLongB(long lon) {
+		return (int)(lon & mask);
+	}
+
+	@Override
+	public Iterator<int[]> iterator() {
+		Iterator<Long> i = points.iterator();
+		
+		return new Iterator<int[]>() {
+			@Override
+			public boolean hasNext() {
+				return i.hasNext();
+			}
+
+			@Override
+			public int[] next() {
+				long lon = i.next();
+				return new int[] {splitLongA(lon), splitLongB(lon)};
+			}
+		};
 	}
 	
 }

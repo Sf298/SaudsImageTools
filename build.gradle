@@ -11,7 +11,7 @@ sourceCompatibility = '1.8'
 // prefer. In this case NetBeans will not add these tasks but you may rely on
 // your own implementation.
 if (!hasProperty('mainClass')) {
-    ext.mainClass = 'maintest.Test'
+    ext.mainClass = 'maintest.PrivacyTest'
 }
 
 repositories {
@@ -25,6 +25,8 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.Sf298:Sauds-Toolbox:44cf8807fc38b1359258a120fba55da73d45831c'
-    testCompile group: 'junit', name: 'junit', version: '4.10'
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.12.0'
+    implementation 'com.github.Sf298:Sauds-Toolbox:7051109848be1e5bb0703d3943ae865e5199bf8b'
+    testImplementation group: 'junit', name: 'junit', version: '4.10'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
 }

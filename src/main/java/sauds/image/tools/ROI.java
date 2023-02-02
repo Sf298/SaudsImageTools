@@ -20,8 +20,21 @@ public class ROI extends ImgInterface {
     private ImgInterface img;
     private final int x,y,c;
     private final int valuesLen;
-
+	
+	/**
+	 * Creates a new region of interest in an Img.
+	 * @param x the starting x coord (inclusive)
+	 * @param w the width of the ROI, if -1 it is set to the width of the Img
+	 * @param y the starting y coord (inclusive)
+	 * @param h the height of the ROI, if -1 it is set to the height of the Img
+	 * @param c the starting c coord (inclusive)
+	 * @param d the depth of the ROI, if -1 it is set to the depth of the Img
+	 * @param img 
+	 */
     public ROI(int x, int w, int y, int h, int c, int d, ImgInterface img) {
+		if(w == -1) w = img.width;
+		if(h == -1) h = img.height;
+		if(d == -1) d = img.channels;
 		this.x = x; width = w;
 		this.y = y; height = h;
 		this.c = c; channels = d;
@@ -72,22 +85,22 @@ public class ROI extends ImgInterface {
     public Byte getVal(int x, int y, int c, int borderHandling) {
 		switch (borderHandling) {
 			case BORDER_EXTEND:
-			if(x < 0) x = 0; if(x >= width) x = width - 1;
-			if(y < 0) y = 0; if(y >= height) y = height - 1;
-			if(c < 0) c = 0; if(c >= channels) c = channels - 1;
-			return getVal(x,y,c);
+				if(x < 0) x = 0; if(x >= width) x = width - 1;
+				if(y < 0) y = 0; if(y >= height) y = height - 1;
+				if(c < 0) c = 0; if(c >= channels) c = channels - 1;
+				return getVal(x,y,c);
 			case BORDER_IGNORE:
-			if(x < 0 || x >= width) return null;
-			if(y < 0 || y >= height) return null;
-			if(c < 0 || c >= channels) return null;
-			return getVal(x,y,c);
+				if(x < 0 || x >= width) return null;
+				if(y < 0 || y >= height) return null;
+				if(c < 0 || c >= channels) return null;
+				return getVal(x,y,c);
 			case BORDER_INNER:
-			return getVal(x,y,c);
-			/*case BORDER_WRAP:
-				while(x<0) x += width; if(x >= width) x = x%width;
-				while(y<0) y += height; if(y >= height) y = y%height;
-				while(c<0) c += channels; if(c >= channels) c = c%channels;
-				return getVal(x,y,c);*/
+				return getVal(x,y,c);
+				/*case BORDER_WRAP:
+					while(x<0) x += width; if(x >= width) x = x%width;
+					while(y<0) y += height; if(y >= height) y = y%height;
+					while(c<0) c += channels; if(c >= channels) c = c%channels;
+					return getVal(x,y,c);*/
 		}
 		return null;
     }
@@ -147,14 +160,13 @@ public class ROI extends ImgInterface {
     
 	@Override
 	public ImgInterface runOp(Op op) {
-		ImgInterface out = img.create(width, height, channels);
-		MPT.run(threadCount, 0, valuesLen, 1, new MTPListRunnable<Byte>() {
+		MPT.run(threadCount, 0, valuesLen, 1, new MTPListRunnable<Integer>() {
 			@Override
-			public void iter(int procID, int idx, Byte val) {
-				out.setInt(idx, op.run(procID, idx, getInt(idx)));
+			public void iter(int procID, int idx, Integer val) {
+				setInt(idx, op.run(procID, idx, getInt(idx)));
 			}
 		});
-		return out;
+		return null;
     }
     
 	/**
