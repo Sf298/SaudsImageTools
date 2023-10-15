@@ -2,7 +2,6 @@ package sauds.image.tools2;
 
 import org.apache.commons.lang3.tuple.Triple;
 import sauds.toolbox.multiprocessing.tools.MPT;
-import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
