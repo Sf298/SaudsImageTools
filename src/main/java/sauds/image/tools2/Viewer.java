@@ -17,8 +17,8 @@ import java.util.Collection;
  */
 public class Viewer extends JFrame {
 	
-	private ArrayList<ImageIcon> imgs = new ArrayList<>();
-	private GridLayout layout = new GridLayout();
+	private final ArrayList<ImageIcon> imgs = new ArrayList<>();
+	private final GridLayout layout = new GridLayout();
 	public static final String DEFAULT_TITLE = "ImgViewer";
 	
 	public Viewer(String title) {

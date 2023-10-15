@@ -84,17 +84,14 @@ public class ImageRaster implements WriteableImage {
         else channels = 4;
         ImageRaster out = create(width, height, channels);
 
-        MPT.run(threadCount, 0, height, 1, new MTPListRunnable() {
-            @Override
-            public void iter(int procID, int idx, Object val) {
-                int y = idx;
-                for(int x=0; x<width; x++) {
-                    Color col = new Color(img.getRGB(x, y));
-                    if(1 <= channels) out.setInt(x,y,0, col.getRed());
-                    if(2 <= channels) out.setInt(x,y,1, col.getGreen());
-                    if(3 <= channels) out.setInt(x,y,2, col.getBlue());
-                    if(4 <= channels) out.setInt(x,y,3, col.getAlpha());
-                }
+        MPT.run(threadCount, 0, height, 1, (procID, idx, val) -> {
+            int y = idx;
+            for(int x=0; x<width; x++) {
+                Color col = new Color(img.getRGB(x, y));
+                if(1 <= channels) out.setInt(x,y,0, col.getRed());
+                if(2 <= channels) out.setInt(x,y,1, col.getGreen());
+                if(3 <= channels) out.setInt(x,y,2, col.getBlue());
+                if(4 <= channels) out.setInt(x,y,3, col.getAlpha());
             }
         });
         return out;

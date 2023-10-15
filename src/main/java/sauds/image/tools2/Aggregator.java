@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * A collection of functions that can be used with the convolution operation

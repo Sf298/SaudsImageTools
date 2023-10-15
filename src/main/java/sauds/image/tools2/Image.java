@@ -123,13 +123,10 @@ public interface Image {
     default long[] sumChannelValues() {
         long[][] rawSum = new long[threadCount][getDepth()];
 
-        MPT.run(threadCount, 0, getHeight(), 1, new MTPListRunnable() {
-            @Override
-            public void iter(int procID, int y, Object val) {
-                for(int x=0; x<getWidth(); x++) {
-                    for(int c=0; c<getDepth(); c++) {
-                        rawSum[procID][c] += getInt(x, y, c);
-                    }
+        MPT.run(threadCount, 0, getHeight(), 1, (procID, y, val) -> {
+            for(int x=0; x<getWidth(); x++) {
+                for(int c=0; c<getDepth(); c++) {
+                    rawSum[procID][c] += getInt(x, y, c);
                 }
             }
         });
@@ -149,22 +146,18 @@ public interface Image {
     default long sumAllValues() {
         long[] rawSum = sumChannelValues();
         long out = 0;
-        for(int i=0; i<rawSum.length; i++)
-            out += rawSum[i];
+        for (long l : rawSum) out += l;
         return out;
     }
     default BufferedImage toBufferedImage() {
         int type = (getDepth() == 3) ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
         BufferedImage out = new BufferedImage(getWidth(), getHeight(), type);
 
-        MPT.run(threadCount, 0, getHeight(), 1, new MTPListRunnable() {
-            @Override
-            public void iter(int procID, int idx, Object val) {
-                int y = idx;
-                for(int x=0; x<getWidth(); x++) {
-                    Color col = getColor(x, y);
-                    out.setRGB(x, y, col.getRGB());
-                }
+        MPT.run(threadCount, 0, getHeight(), 1, (procID, idx, val) -> {
+            int y = idx;
+            for(int x=0; x<getWidth(); x++) {
+                Color col = getColor(x, y);
+                out.setRGB(x, y, col.getRGB());
             }
         });
         return out;

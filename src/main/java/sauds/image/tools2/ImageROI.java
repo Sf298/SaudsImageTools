@@ -8,7 +8,6 @@ public class ImageROI implements WriteableImage {
 
     private final Image image;
     private final int x,y,c, w,h,d;
-    private final int valuesLen;
 
     /**
      * Creates a new region of interest in an Img.
@@ -28,7 +27,6 @@ public class ImageROI implements WriteableImage {
         this.x = x; this.w = w;
         this.y = y; this.h = h;
         this.c = c; this.d = d;
-        this.valuesLen = w * h * d;
     }
 
     @Override
