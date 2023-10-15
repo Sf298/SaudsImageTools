@@ -1,5 +1,6 @@
 package sauds.image.tools2;
 
+import org.apache.commons.lang3.tuple.Triple;
 import sauds.toolbox.multiprocessing.tools.MPT;
 import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
 
@@ -9,10 +10,10 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.function.Function;
 
-public class Img implements IImgWriteable {
+public class ImageRaster implements WriteableImage {
 
     int width, height, depth;
     private byte[] values;
@@ -24,23 +25,41 @@ public class Img implements IImgWriteable {
     /////////////////////////////////////////////////////
     ////////////////     Constructors    ////////////////
     /////////////////////////////////////////////////////
-    public static Img create(int width, int height, int channels) {
-        Img out = new Img();
+    public static ImageRaster create(int width, int height, int channels) {
+        ImageRaster out = new ImageRaster();
         out.width = width;
         out.height = height;
         out.depth = channels;
         out.values = new byte[width*height*channels];
         return out;
     }
-    public static Img create(int width, int height, int channels, byte... values) {
-        Img out = new Img();
+    public static ImageRaster create(int width, int height, int channels, byte... values) {
+        ImageRaster out = new ImageRaster();
         out.width = width;
         out.height = height;
         out.depth = channels;
         out.values = values;
         return out;
     }
-    public static Img create(BufferedImage img) {
+    public static ImageRaster create(int width, int height, int channels, Function<Triple<Integer, Integer, Integer>, Byte> mapper) {
+        ImageRaster out = new ImageRaster();
+        out.width = width;
+        out.height = height;
+        out.depth = channels;
+        out.values = new byte[width * height * channels];
+
+        int x = 0;
+        for (int k = 0; k < channels; k++) {
+            for (int j = 0; j < height; j++) {
+                for (int i = 0; i < width; i++) {
+                    out.values[x] = mapper.apply(Triple.of(i,j,k));
+                    x++;
+                }
+            }
+        }
+        return out;
+    }
+    public static ImageRaster create(BufferedImage img) {
         if(img == null)
             throw new NullPointerException("Could not read image, img may be null");
 
@@ -63,7 +82,7 @@ public class Img implements IImgWriteable {
                 || img.getType()==BufferedImage.TYPE_INT_ARGB_PRE)
             channels = 4;
         else channels = 4;
-        Img out = create(width, height, channels);
+        ImageRaster out = create(width, height, channels);
 
         MPT.run(threadCount, 0, height, 1, new MTPListRunnable() {
             @Override
@@ -80,7 +99,7 @@ public class Img implements IImgWriteable {
         });
         return out;
     }
-    public static Img create(File f) throws IOException {
+    public static ImageRaster create(File f) throws IOException {
         return create(ImageIO.read(f));
     }
 

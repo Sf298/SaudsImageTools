@@ -5,10 +5,9 @@ import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.LinkedHashMap;
 import java.util.List;
 
-public interface IImgRead {
+public interface Image {
 
 
     int threadCount = MPT.coreCount()-1;
@@ -40,8 +39,8 @@ public interface IImgRead {
     }
 
     /**
-     * Get the list of layers in this stack
-     * @return the list of layers, with the base first
+     * Get the list of layers in this stack.
+     * @return the list of layers, with the base layer at index 0
      */
     List<Layer<?>> getLayers();
 
@@ -96,7 +95,7 @@ public interface IImgRead {
             case 4:
                 return new Color(b(getInt(pos)), b(getInt(pos+1)), b(getInt(pos+2)), b(getInt(pos+3)));
         }
-        return null;
+        throw new UnsupportedOperationException("Failed to get color. Unsupported depth of "+getDepth());
     }
 
     /**
@@ -170,8 +169,8 @@ public interface IImgRead {
         });
         return out;
     }
-    default Img evaluate() {
-        Img out = Img.create(getWidth(), getHeight(), getDepth());
+    default ImageRaster evaluate() {
+        ImageRaster out = ImageRaster.create(getWidth(), getHeight(), getDepth());
 
         MPT.run(threadCount, 0, getHeight(), 1, (procID, y, val) -> {
             for(int x=0; x<getWidth(); x++) {

@@ -15,13 +15,13 @@ import java.util.Collection;
  *
  * @author saud
  */
-public class ImgViewer extends JFrame {
+public class Viewer extends JFrame {
 	
 	private ArrayList<ImageIcon> imgs = new ArrayList<>();
 	private GridLayout layout = new GridLayout();
 	public static final String DEFAULT_TITLE = "ImgViewer";
 	
-	public ImgViewer(String title) {
+	public Viewer(String title) {
 		super(title);
 		setLayout(layout);
 		addSlot();
@@ -30,16 +30,16 @@ public class ImgViewer extends JFrame {
 		setSize(700, 700);
 		setVisible(true);
 	}
-	public final void setImg(int pos, IImgRead img) {
+	public final void setImg(int pos, Image image) {
 		while(imgs.size() <= pos)
 			addSlot();
-		imgs.get(pos).setImage(img.toBufferedImage());
+		imgs.get(pos).setImage(image.toBufferedImage());
 	}
-	public final void addImg(IImgRead img) {
+	public final void addImg(Image image) {
 		ImageIcon lastIcon = imgs.get(imgs.size()-1);
 		if(lastIcon.getImage()!=null)
 			addSlot();
-		lastIcon.setImage(img.toBufferedImage());
+		lastIcon.setImage(image.toBufferedImage());
 	}
 	private void addSlot() {
 		ImageIcon icon = new ImageIcon();
@@ -50,13 +50,13 @@ public class ImgViewer extends JFrame {
     /**
      * Displays a collection of images
 	 * @param title the title to display on the ImgViewer
-     * @param imgs the images to display in the ImgViewer
+     * @param images the images to display in the ImgViewer
 	 * @return returns a reference to the ImgViewer created
      */
-	public static ImgViewer showAll(String title, Collection<IImgRead> imgs) {
-		ImgViewer imv = new ImgViewer(title);
-		for(IImgRead img : imgs) {
-			imv.addImg(img);
+	public static Viewer showAll(String title, Collection<Image> images) {
+		Viewer imv = new Viewer(title);
+		for(Image image : images) {
+			imv.addImg(image);
 		}
 		imv.repaint();
 		return imv;
@@ -65,29 +65,29 @@ public class ImgViewer extends JFrame {
     /**
      * Displays one or more images
 	 * @param title the title to display on the ImgViewer
-     * @param imgs the images to display in the ImgViewer
+     * @param images the images to display in the ImgViewer
 	 * @return returns a reference to the ImgViewer created
      */
-	public static ImgViewer showAll(String title, IImgRead... imgs) {
-		return showAll(title, Arrays.asList(imgs));
+	public static Viewer showAll(String title, Image... images) {
+		return showAll(title, Arrays.asList(images));
 	}
 	
     /**
      * Displays a collection of images
-     * @param imgs the images to display in the ImgViewer
+     * @param images the images to display in the ImgViewer
 	 * @return returns a reference to the ImgViewer created
      */
-	public static ImgViewer showAll(Collection<IImgRead> imgs) {
-		return showAll(DEFAULT_TITLE, imgs);
+	public static Viewer showAll(Collection<Image> images) {
+		return showAll(DEFAULT_TITLE, images);
 	}
 	
     /**
      * Displays one or more images
-     * @param imgs the images to display in the ImgViewer
+     * @param images the images to display in the ImgViewer
 	 * @return returns a reference to the ImgViewer created
      */
-	public static ImgViewer showAll(IImgRead... imgs) {
-		return showAll(DEFAULT_TITLE, imgs);
+	public static Viewer showAll(Image... images) {
+		return showAll(DEFAULT_TITLE, images);
 	}
 	
 }

@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * A collection of functions that can be used with the convolution operation
+ */
 public abstract class Aggregator {
 
     public static final Function<Kernel, Aggregator> SUM = kernel -> new Aggregator() {
@@ -21,13 +24,15 @@ public abstract class Aggregator {
     };
     public static final Function<Kernel, Aggregator> MEAN = kernel -> new Aggregator() {
         private int sum = 0;
+        private int count = 0;
         @Override
         public void addValue(int value) {
             sum += value;
+            count++;
         }
         @Override
         public int getResult() {
-            return sum / kernel.getValuesSum();
+            return sum / count;
         }
     };
     public static final Function<Kernel, Aggregator> MEDIAN = kernel -> new Aggregator() {

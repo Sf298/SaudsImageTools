@@ -1,6 +1,6 @@
 package sauds.image.tools2;
 
-public interface IImgWriteable extends IImgRead {
+public interface WriteableImage extends Image {
 
     default void setInt(int i, int val) {
         int[] coord = to3D(i);
