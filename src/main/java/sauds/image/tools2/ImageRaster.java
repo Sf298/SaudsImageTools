@@ -19,6 +19,13 @@ public class ImageRaster implements WriteableImage {
     public byte[] getValues() {
         return values;
     }
+    public int[] getValuesInt() {
+        int[] out = new int[values.length];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = getInt(i);
+        }
+        return out;
+    }
 
 
     /////////////////////////////////////////////////////

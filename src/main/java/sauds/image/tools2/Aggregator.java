@@ -44,6 +44,10 @@ public abstract class Aggregator {
         @Override
         public int getResult() {
             Collections.sort(values);
+            if (values.size() % 2 == 0) {
+                int mid = values.size() >> 1;
+                return (int) Math.round((values.get(mid-1)+values.get(mid))/2.0);
+            }
             return values.get(values.size() / 2);
         }
     };

@@ -276,14 +276,13 @@ public interface Image {
     /////////////////////////////////////////////////////
     // source: https://stackoverflow.com/questions/20266201/3d-array-1d-flat-indexing
     default int to1D(int x, int y, int z) {
-        //return (y * getDepth() * getWidth()) + (x * getDepth()) + z;
-        return (x * getDepth() * getHeight()) + (y * getDepth()) + z;
+        return (z * getWidth() * getHeight()) + (y * getWidth()) + x;
     }
     default int[] to3D(int idx) {
-        final int x = idx / (getDepth() * getHeight());
-        idx -= (x * getDepth() * getHeight());
-        final int y = idx / getDepth();
-        final int z = idx % getDepth();
+        final int z = idx / (getWidth() * getHeight());
+        idx -= (z * getWidth() * getHeight());
+        final int y = idx / getWidth();
+        final int x = idx % getWidth();
         return new int[]{ x, y, z };
     }
 

@@ -89,6 +89,17 @@ public class Viewer extends JFrame {
 	public static Viewer showAll(Image... images) {
 		return showAll(DEFAULT_TITLE, images);
 	}
-	
+
+	public static void print(Image image) {
+		for (int k = 0; k < image.getDepth(); k++) {
+			for (int j = 0; j < image.getHeight(); j++) {
+				for (int i = 0; i < image.getWidth(); i++) {
+					System.out.printf("%d,\t", image.getInt(i,j,k));
+				}
+				System.out.println();
+			}
+			System.out.println();
+		}
+	}
 }
 	
