@@ -40,15 +40,24 @@ public abstract class Operation implements Image {
      */
     abstract int applyOp(Image imageRead, int x, int y, int c);
 
-    public static Image convolve(Image image, BorderHandling bh, Function<Kernel, Aggregator> aggSupplier, Kernel kernel, double hStep, double vStep) {
+    /**
+     * Convolve this image with a kernel.
+     * @param image the image to operate on
+     * @param bh a {@link BorderHandling} to indicate how to handle edges
+     * @param aggSupplier the {@link Aggregator} to use.
+     * @param kernel the {@link Kernel}
+     * @param hStep the horizontal stride
+     * @param vStep the vertical stride
+     */
+    public static Image convolve(Image image, BorderHandling bh, Kernel kernel, Function<Kernel, Aggregator> aggSupplier, double hStep, double vStep) {
         if (!kernel.isSeparable()) {
-            return convolveGeneral(image, bh, aggSupplier, kernel, hStep, vStep);
+            return convolveGeneral(image, bh, kernel, aggSupplier, hStep, vStep);
         }
 
-        Image opResult = convolveGeneral(image, bh, aggSupplier, kernel.getHComponent(), 1, 1);
-        return convolveGeneral(opResult, bh, aggSupplier, kernel.getVComponent(), 1, 1);
+        Image opResult = convolveGeneral(image, bh, kernel.getHComponent(), aggSupplier, 1, 1);
+        return convolveGeneral(opResult, bh, kernel.getVComponent(), aggSupplier, 1, 1);
     }
-    private static Image convolveGeneral(Image image, BorderHandling bh, Function<Kernel, Aggregator> aggSupplier, Kernel kernel, double hStep, double vStep) {
+    private static Image convolveGeneral(Image image, BorderHandling bh, Kernel kernel, Function<Kernel, Aggregator> aggSupplier, double hStep, double vStep) {
         Layer<?> layer = new Layer<>(Operation.class, "convolution", true, Triple.of(bh, aggSupplier, kernel));
         int kernelW = kernel.getW();
         int kernelH = kernel.getH();
@@ -72,8 +81,8 @@ public abstract class Operation implements Image {
                 return new Operation(innerBounds, newW, newH, image.getDepth(), layer) {
                     @Override
                     public int applyOp(Image imageRead, int x, int y, int c) {
-                        x *= hStep;
-                        y *= vStep;
+                        x = (int) (x * hStep);
+                        y = (int) (y * vStep);
                         Aggregator aggregator = aggSupplier.apply(kernel);
                         for (int j = 0; j < kernelH; j++) {
                             for (int i = 0; i < kernelW; i++) {
@@ -88,8 +97,8 @@ public abstract class Operation implements Image {
                 return new Operation(image, newW, newH, image.getDepth(), layer) {
                     @Override
                     public int applyOp(Image imageRead, int x, int y, int c) {
-                        x *= hStep;
-                        y *= vStep;
+                        x = (int) (x * hStep);
+                        y = (int) (y * vStep);
                         Aggregator aggregator = aggSupplier.apply(kernel);
                         for (int i = 0; i < kernelW; i++) {
                             for (int j = 0; j < kernelH; j++) {
@@ -175,14 +184,25 @@ public abstract class Operation implements Image {
     }
 
 
+    /**
+     * Resize this image to the given width/height
+     * @param w the new width, if negative flips the Img, if null maintains aspect ratio
+     * @param h the new height, if negative flips the Img, if null maintains aspect ratio
+     */
     public static Image resize(Image image, Integer w, Integer h) {
         if(w==null && h==null) {
             throw new NullPointerException("Both inputs are null");
         } else if (w==null) {
             w = (h * image.getWidth())/ image.getHeight();
+            if (h < 0) w *= -1; // correct the negative value
         } else if (h==null) {
             h = (w * image.getHeight())/ image.getWidth();
+            if (w < 0) h *= -1; // correct the negative value
         }
+
+        image = reflect(image, w<0, h<0);
+        w = Math.abs(w);
+        h = Math.abs(h);
 
         if (w * image.getHeight() < image.getWidth() * h) {
             Image a = resizeHorizontal(image, w);
@@ -192,6 +212,10 @@ public abstract class Operation implements Image {
             return resizeHorizontal(a, w);
         }
     }
+    /**
+     * Resize this image to the given width
+     * @param w the new width
+     */
     public static Image resizeHorizontal(Image image, Integer w) {
         if (w == image.getWidth()) {
             return image;
@@ -219,9 +243,13 @@ public abstract class Operation implements Image {
             };
         } else {
             double step = (double) image.getWidth() / w;
-            return convolve(image, BorderHandling.IGNORE, Aggregator.MEAN, Kernel.boxBlurH((int)step/2), step, 1);
+            return convolve(image, BorderHandling.IGNORE, Kernel.boxBlurH((int)step/2), Aggregator.MEAN, step, 1);
         }
     }
+    /**
+     * Resize this image to the given height
+     * @param h the new height
+     */
     public static Image resizeVertical(Image image, Integer h) {
         if (h == image.getHeight()) {
             return image;
@@ -249,11 +277,118 @@ public abstract class Operation implements Image {
             };
         } else {
             double step = (double) image.getHeight() / h;
-            return convolve(image, BorderHandling.IGNORE, Aggregator.MEAN, Kernel.boxBlurV((int)step/2), 1, step);
+            return convolve(image, BorderHandling.IGNORE, Kernel.boxBlurV((int)step/2), Aggregator.MEAN, 1, step);
         }
+    }
+    /**
+     * Adjust the size of the image by a ratio
+     * @param w the ratio to adjust the width by
+     * @param h the ratio to adjust the height by
+     */
+    public static Image rescale(Image image, double w, double h) {
+        return resize(image, (int)(image.getWidth()*w), (int)(image.getHeight()*h));
     }
     private static double interpolate(double a, double b, double ratioFromA) {
         return (b-a) * ratioFromA + a;
+    }
+
+    /**
+     * Rotate the image by a specified amount. Pads the corners to avoid cropping the Image.
+     * @param rad the angle in radians to rotate by
+     * @return the rotated {@link Image}
+     */
+    public Image rotate(Image image, double rad) {
+        double theta = normaliseRadians(rad);
+        double[] p1 = rotateTransform(0, 0, rad);
+        double[] p2 = rotateTransform(width, 0, rad);
+        double[] p3 = rotateTransform(0, height, rad);
+        double[] p4 = rotateTransform(width, height, rad);
+        double minX = Math.min(Math.min(p1[0], p2[0]), Math.min(p4[0], p3[0]));
+        double maxX = Math.max(Math.max(p1[0], p2[0]), Math.max(p4[0], p3[0]));
+        double minY = Math.min(Math.min(p1[1], p2[1]), Math.min(p4[1], p3[1]));
+        double maxY = Math.max(Math.max(p1[1], p2[1]), Math.max(p4[1], p3[1]));
+
+        // re-adjust position to move into box
+        int xShift, yShift;
+        if(theta < Math.PI/2) {
+            xShift = (int) (p2[0]-(maxX-minX));
+            yShift = 0;
+        } else if(theta < Math.PI) {
+            xShift = (int) -(maxX-minX);
+            yShift = (int) (p3[1]-p1[1]);
+        } else if(theta < Math.PI*3/2) {
+            xShift = (int) (p2[0]-p1[0]);
+            yShift = (int) -(maxY-minY);
+        } else {
+            xShift = 0;
+            yShift = (int) -(p2[1]-p1[1]);;
+        }
+
+        Layer<?> layer = new Layer<>(Operation.class, "rotate", true, rad);
+
+        return new Operation(image, (int)(maxX-minX)-1, (int)(maxY-minY)-1, image.getDepth(), layer) {
+            @Override
+            int applyOp(Image imageRead, int x, int y, int c) {
+                double[] oldCoords = rotateTransform(x+xShift, y+yShift, theta);
+                double oldX = oldCoords[0];
+                double oldY = oldCoords[1];
+
+                Double temp = getInterpolatedWithCheck(oldX, 0, oldY, 0, c);
+                if(temp == null) {
+                    return c==3 ? -1/*(255)*/ : 0;
+                } else {
+                    return (int) Math.round(temp);
+                }
+            }
+        };
+    }
+    private static double normaliseRadians(double rad) {
+        rad = rad % (2*Math.PI);
+        return (rad<0) ? Math.PI*2+rad : rad;
+    }
+    private static double[] rotateTransform(double x, double y, double rad) {
+        return new double[] {
+                x*Math.cos(rad) + y*Math.sin(rad),
+                -x*Math.sin(rad) + y*Math.cos(rad)
+        };
+    }
+
+    /**
+     * Reflect/flip the image in the specified axis.
+     * @param horizontal whether the image should be flipped in the x-axis.
+     * @param vertical whether the image should be flipped in the y-axis.
+     * @return the rotated {@link Image}
+     */
+    public static Image reflect(Image image, boolean horizontal, boolean vertical) {
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "reflect", false, Pair.of(horizontal, vertical));
+        int w = image.getWidth();
+        int h = image.getHeight();
+        if (horizontal && vertical) {
+            return new Operation(image, layer) {
+                @Override
+                int applyOp(Image imageRead, int x, int y, int c) {
+                    imageRead.getInt(w-x, h-y, c);
+                    return 0;
+                }
+            };
+        } else if (!horizontal && vertical) {
+            return new Operation(image, layer) {
+                @Override
+                int applyOp(Image imageRead, int x, int y, int c) {
+                    imageRead.getInt(x, h-y, c);
+                    return 0;
+                }
+            };
+        } else if (horizontal) {
+            return new Operation(image, layer) {
+                @Override
+                int applyOp(Image imageRead, int x, int y, int c) {
+                    imageRead.getInt(w-x, y, c);
+                    return 0;
+                }
+            };
+        }
+        return image;
     }
 
     public static Image toGreyscale(Image image) {

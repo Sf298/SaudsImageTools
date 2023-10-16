@@ -99,6 +99,101 @@ public interface Image {
     }
 
     /**
+     * Gets the sub pixel value at the given image coordinate. Interpolates or
+     * averages if needed.
+     * @param x the x coord
+     * @param xW the number of pixels to average. Interpolates if 0.
+     * @param y the y coord
+     * @param yW the number of pixels to average. Interpolates if 0.
+     * @param c the channel
+     */
+    default double getInterpolated(double x, int xW, double y, int yW, int c) {
+        if((xW | yW) == 0) { // both need to interp
+            int x1 = (int) Math.floor(x), x2 = (int) Math.ceil(x);
+            int y1 = (int) Math.floor(y), y2 = (int) Math.ceil(y);
+            double xR = x-(long)x;
+            double v1 = linearInterpolation(getInt(x1,y1,c), getInt(x2,y1,c), xR);
+            double v2 = linearInterpolation(getInt(x1,y2,c), getInt(x2,y2,c), xR);
+            return linearInterpolation(v1, v2, y-(long)y);
+        } else if(xW!=0 & yW!=0) { // both need to average
+            int halfXW = xW >>> 1; //xW / 2
+            int halfYW = yW >>> 1; //yW / 2
+            int xLeftPos = ( ((xW&1)==0) ? -halfXW + 1 : -halfXW) + (int) x;
+            int xRightPos = halfXW + (int) x;
+            int yLeftPos = ( ((yW&1)==0) ? -halfYW + 1 : -halfYW) + (int) y;
+            int yRightPos = halfYW + (int) y;
+            int sum = 0;
+            int count = 0;
+            for(int dx=xLeftPos; dx<=xRightPos; dx++) {
+                for(int dy=yLeftPos; dy<=yRightPos; dy++) {
+                    Integer imVal = getInt(dx, dy, c, BorderHandling.IGNORE);
+                    if(imVal != null) {
+                        sum += imVal;
+                        count++;
+                    }
+                }
+            }
+            return sum/(double)count;
+        } else if(xW!=0 & yW==0) { // x needs to average, y need to interp
+            int y1 = (int) Math.floor(y), y2 = (int) Math.ceil(y);
+            double yR = y-(long)y;
+
+            int halfXW = xW >>> 1; //xW / 2
+            int xLeftPos = ( ((xW&1)==0) ? -halfXW + 1 : -halfXW) + (int) x;
+            int xRightPos = halfXW + (int) x;
+
+            double sum = 0;
+            int count = 0;
+            for(int dx=xLeftPos; dx<=xRightPos; dx++) {
+                if(0 < dx && dx < getWidth()) {
+                    double v1 = linearInterpolation(getInt(dx,y1,c), getInt(dx,y2,c), yR);
+                    sum += v1;
+                    count++;
+                }
+            }
+            return sum / count;
+        } else if(xW==0 & yW!=0) {
+            int x1 = (int) Math.floor(x), x2 = (int) Math.ceil(x);
+            double xR = x-(long)x;
+
+            int halfYW = yW >>> 1; //yW / 2
+            int yLeftPos = ( ((yW&1)==0) ? -halfYW + 1 : -halfYW) + (int) y;
+            int yRightPos = halfYW + (int) y;
+
+            double sum = 0;
+            int count = 0;
+            for(int dy=yLeftPos; dy<=yRightPos; dy++) {
+                if(0 < dy && dy < getHeight()) {
+                    double v1 = linearInterpolation(getInt(x1,dy,c), getInt(x2,dy,c), xR);
+                    sum += v1;
+                    count++;
+                }
+            }
+            return sum / count;
+        }
+        return Double.NaN;
+    }
+    /**
+     * Same as getInterp() but ensures that the requested pixel is within the region of the image.
+     * @param x the x coord
+     * @param xW the number of pixels to average. Interpolates if 0.
+     * @param y the y coord
+     * @param yW the number of pixels to average. Interpolates if 0.
+     * @param c the channel
+     */
+    default Double getInterpolatedWithCheck(double x, int xW, double y, int yW, int c) {
+        if(x < 0 || x >= getWidth()-1) return null;
+        if(y < 0 || y >= getHeight()-1) return null;
+        if(c < 0 || c >= getDepth()) return null;
+        return getInterpolated(x, xW, y, yW, c);
+    }
+    default double linearInterpolation(double a, double b, double ratio) {
+		/*if(ratio != 0)
+			System.out.println("");*/
+        return a + (b-a)*ratio;
+    }
+
+    /**
      * Get the smallest and largest pixel value
      * @return an array containing the min and max values respectively
      */

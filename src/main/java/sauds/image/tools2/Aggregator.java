@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * A collection of functions that can be used with the convolution operation
+ * A collection of functions that can be used with the convolution operation. They specify
+ * how to combine the multiplied values within a convolution step.
  */
 public abstract class Aggregator {
 
