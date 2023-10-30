@@ -3,8 +3,11 @@ package sauds.image.tools2;
 import sauds.toolbox.multiprocessing.tools.MPT;
 import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 public interface Image {
@@ -96,6 +99,9 @@ public interface Image {
                 return new Color(b(getInt(pos)), b(getInt(pos+1)), b(getInt(pos+2)), b(getInt(pos+3)));
         }
         throw new UnsupportedOperationException("Failed to get color. Unsupported depth of "+getDepth());
+    }
+    default boolean isInBounds(int x, int y, int c) {
+        return !(x<0 || y<0 || c<0 || x>=getWidth() || y>=getHeight() || c>=getDepth()); // todo find and remove duplicates
     }
 
     /**
@@ -190,7 +196,7 @@ public interface Image {
     default double linearInterpolation(double a, double b, double ratio) {
 		/*if(ratio != 0)
 			System.out.println("");*/
-        return a + (b-a)*ratio;
+        return a + (b-a)*ratio; // todo remove this duplicate
     }
 
     /**
@@ -269,6 +275,44 @@ public interface Image {
             }
         });
         return out;
+    }
+
+    /**
+     * Calculate the histograms for each channel in the image.
+     * @return out[channels][0-255]
+     */
+    default int[][] getHistogram() {
+        int[][][] tempOut = new int[threadCount][getDepth()][256];
+        MPT.run(threadCount, 0, getHeight(), 1, (procID, y, val) -> {
+            for(int x=0; x<getWidth(); x++) {
+                for(int c=0; c<getDepth(); c++) {
+                    tempOut[procID][c][getInt(x, y, c)]++;
+                }
+            }
+        });
+        int[][] out = new int[getDepth()][256];
+        for(int i=0; i<getDepth(); i++) {
+            for(int j=0; j<256; j++) {
+                int sum = 0;
+                for(int k=0; k<threadCount; k++) {
+                    sum += tempOut[k][i][j];
+                }
+                out[i][j] = sum;
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Save the Img into a file.
+     * @param formatName a String containing the informal name of the format.
+     * @param f The file to save to.
+     * @exception IllegalArgumentException if any parameter is
+     * <code>null</code>.
+     * @exception IOException if an error occurs during writing.
+     */
+    default void save(String formatName, File f) throws IOException {
+        ImageIO.write(toBufferedImage(), formatName, f);
     }
 
     /////////////////////////////////////////////////////

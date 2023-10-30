@@ -3,17 +3,17 @@ package sauds.image.tools2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static java.util.Objects.nonNull;
 
 public class Operations {
 
     /////////////////////////////////////////////////
-    //             General Operations              //
+    //              Fancy Operations               //
     /////////////////////////////////////////////////
     /**
      * Convolve this image with a kernel.
@@ -33,12 +33,12 @@ public class Operations {
         return convolveGeneral(opResult, bh, kernel.getVComponent(), aggSupplier, 1, 1);
     }
     private static Image convolveGeneral(Image image, BorderHandling bh, Kernel kernel, Function<Kernel, Aggregator> aggSupplier, double hStep, double vStep) {
-        Layer<?> layer = new Layer<>(Operation.class, "convolution", true, Triple.of(bh, aggSupplier, kernel));
         int kernelW = kernel.getW();
         int kernelH = kernel.getH();
         int hkW = kernelW / 2;
         int hkH = kernelH / 2;
 
+        Layer<?> layer = new Layer<>(Operation.class, "convolution", true, Triple.of(bh, aggSupplier, kernel));
         if (image.hasSlowLayer()) {
             image = image.evaluate();
         }
@@ -142,14 +142,287 @@ public class Operations {
     }*/
 
     /**
+     * Builds a laplacian pyramid. from the image.
+     * @param levelCount The number of levels in the pyramid
+     * @return The layers of the pyramid as a list, from the largest layer to the smallest layer
+     */
+    public ArrayList<Image> laplacianPyramid(Image image, int levelCount) {
+        ArrayList<Image> out = new ArrayList<>();
+        Image color = image;
+        for(int i=0; i<levelCount; i++) {
+            Image redu = downscale2x(color);
+            Image upSc = upscale2x(redu);
+            out.add(subtract(color, upSc));
+            color = redu;
+        }
+        out.add(color);
+        return out;
+    }
+    /**
+     * Converts a laplacian pyramid back into an image.
+     * @param pyramid The layers of the pyramid as a list, from the largest layer to the smallest layer
+     * @return the converted image
+     */
+    public static Image laplacianPyramid(List<Image> pyramid) {
+        Image out = pyramid.get(pyramid.size()-1);
+        for(int i=pyramid.size()-2; i>=0; i--) {
+            out = add(upscale2x(out), pyramid.get(i));
+        }
+        return out;
+    }
+
+    private static final Integer ZERO = 0;
+	/**
+	 * Erode image using the 4 adjacent cells. 'on' values are any number above 0, values are 
+     * 'off' when they are 0.
+	 * @return 
+	 */
+    public Image erode4(Image image) {
+        int w = image.getWidth() >> 1;
+        int h = image.getHeight() >> 1;
+        Layer<?> layer = new Layer<>(Operation.class, "downscale2x", true, Pair.of(w, h));
+        if (image.hasSlowLayer()) {
+            image = image.evaluate();
+        }
+
+        return new Operation(image, layer, w, h, image.getDepth()) {
+            @Override
+            public int applyOp(List<Image> images, int x, int y, int c) {
+                if(ZERO.equals(getInt(x, y-1, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x-1, y, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x, y, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x+1, y, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x, y+1, c, BorderHandling.IGNORE))) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+        };
+    }
+	/**
+	 * Dilate image using the 4 adjacent cells. 'on' values are any number above 0, values are 
+     * 'off' when they are 0.
+	 * @return 
+	 */
+    public Image erode8(Image image) {
+        int w = image.getWidth() >> 1;
+        int h = image.getHeight() >> 1;
+        Layer<?> layer = new Layer<>(Operation.class, "downscale2x", true, Pair.of(w, h));
+        if (image.hasSlowLayer()) {
+            image = image.evaluate();
+        }
+
+        return new Operation(image, layer, w, h, image.getDepth()) {
+            @Override
+            public int applyOp(List<Image> images, int x, int y, int c) {
+                if(ZERO.equals(getInt(x-1, y-1, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x, y-1, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x+1, y-1, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x-1, y, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x, y, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x+1, y, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x-1, y+1, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x, y+1, c, BorderHandling.IGNORE))
+                        || ZERO.equals(getInt(x+1, y+1, c, BorderHandling.IGNORE))) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+        };
+    }
+	/**
+	 * Erode image using the 4 adjacent cells and 4 diagonal cells. 'on' values are any number 
+     * above 0, values are 'off' when they are 0.
+	 * @return 
+	 */
+    public Image dilate4(Image image) {
+        int w = image.getWidth() >> 1;
+        int h = image.getHeight() >> 1;
+        Layer<?> layer = new Layer<>(Operation.class, "downscale2x", true, Pair.of(w, h));
+        if (image.hasSlowLayer()) {
+            image = image.evaluate();
+        }
+
+        return new Operation(image, layer, w, h, image.getDepth()) {
+            @Override
+            public int applyOp(List<Image> images, int x, int y, int c) {
+                if(compGT(getInt(x, y-1, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x-1, y, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x, y, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x+1, y, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x, y+1, c, BorderHandling.IGNORE))) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        };
+    }
+	/**
+	 * Dilate image using the 4 adjacent cells and 4 diagonal cells. 'on' values are any number 
+     * above 0, values are 'off' when they are 0.
+	 * @return 
+	 */
+    public Image dilate8(Image image) {
+        int w = image.getWidth() >> 1;
+        int h = image.getHeight() >> 1;
+        Layer<?> layer = new Layer<>(Operation.class, "downscale2x", true, Pair.of(w, h));
+        if (image.hasSlowLayer()) {
+            image = image.evaluate();
+        }
+
+        return new Operation(image, layer, w, h, image.getDepth()) {
+            @Override
+            public int applyOp(List<Image> images, int x, int y, int c) {
+                if(compGT(getInt(x-1, y-1, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x, y-1, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x+1, y-1, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x-1, y, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x, y, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x+1, y, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x-1, y+1, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x, y+1, c, BorderHandling.IGNORE))
+                        || compGT(getInt(x+1, y+1, c, BorderHandling.IGNORE))) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        };
+    }
+
+    /**
+     * Set the values of each pixel in the {@link Blob}s to the given value.
+     * @param blobs the {@link Blob}s to set.
+     * @param channel The channel in which to insert the {@link Blob}s
+     * @param value The value to set the {@link Blob} to
+     */
+    public Image insertBlobs(Image image, ArrayList<Blob> blobs, int channel, int value) {
+        for(Blob blob : blobs) {
+            image = insertBlob(image, blob, channel, value);
+        }
+        return image;
+    }
+    /**
+     * Set the values of each pixel in the {@link Blob} to the given value.
+     * @param b the {@link Blob} to set
+     * @param channel The channel in which to insert the {@link Blob}
+     * @param value The value to set the {@link Blob} to
+     */
+    public Image insertBlob(Image image, Blob b, int channel, int value) {
+        if(b.getMaxX() > image.getWidth() || b.getMaxY() > image.getHeight())
+            throw new RuntimeException("Blob has pixels outside the range");
+
+        Layer<Pair<Integer, Integer>> layer = new Layer<>(Operation.class, "insert blob", false, null);
+
+        b.indexCoordinates();
+        return new Operation(image, layer, image.getWidth(), image.getHeight(), image.getDepth()) {
+            @Override
+            public int applyOp(List<Image> images, int x, int y, int c) {
+                if (c == channel && b.containsPoint(x,y)) {
+                    return images.get(0).getInt(x, y, c);
+                } else {
+                    return value;
+                }
+            }
+        };
+    }
+    /**
+     * Scan the image for blobs (regions of non-zero values).
+     * @param includeDiagonal if the search should scan diagonally.
+     * @return A list of all blobs detected
+     */
+    public List<Blob> detectBlobs(Image image, boolean includeDiagonal) {
+        ArrayList<Blob> blobs = new ArrayList<>();
+        for(int c=0; c<image.getDepth(); c++) {
+            ImageRaster mask = ImageRaster.create(image.getWidth(), image.getHeight(), 1);
+            for(int y=0; y< image.getHeight(); y++) {
+                for(int x=0; x< image.getWidth(); x++) {
+                    if(mask.getInt(x,y,0) > 0) continue;
+                    if(image.getInt(x, y, c) == 0) {
+                        mask.setInt(x, y, 0, 1);
+                    } else {
+                        //start flood fill
+                        Blob blob = new Blob();
+                        Queue<int[]> q = new LinkedList<>();
+                        q.add(new int[] {x, y});
+                        mask.setInt(x,y,0, 1);
+                        while(!q.isEmpty()) {
+                            int[] currCoord = q.remove();
+                            int cx = currCoord[0];
+                            int cy = currCoord[1];
+                            blob.addPoint(cx, cy);
+                            int tx,ty;
+                            tx = cx+1; ty = cy;
+                            if(image.isInBounds(tx,ty,0) && image.getInt(tx,ty,0)==0 && image.getInt(tx,ty,c) > 0) {
+                                q.add(new int[] {tx,ty});
+                                mask.setInt(tx,ty,0,1);
+                            }
+                            tx = cx-1; ty = cy;
+                            if(image.isInBounds(tx,ty,0) && image.getInt(tx,ty,0)==0 && image.getInt(tx,ty,c) > 0) {
+                                q.add(new int[] {tx,ty});
+                                mask.setInt(tx,ty,0,1);
+                            }
+                            tx = cx; ty = cy+1;
+                            if(image.isInBounds(tx,ty,0) && image.getInt(tx,ty,0)==0 && image.getInt(tx,ty,c) > 0) {
+                                q.add(new int[] {tx,ty});
+                                mask.setInt(tx,ty,0,1);
+                            }
+                            tx = cx; ty = cy-1;
+                            if(image.isInBounds(tx,ty,0) && image.getInt(tx,ty,0)==0 && image.getInt(tx,ty,c) > 0) {
+                                q.add(new int[] {tx,ty});
+                                mask.setInt(tx,ty,0,1);
+                            }
+                            if (includeDiagonal) {
+                                tx = cx+1; ty = cy+1;
+                                if(image.isInBounds(tx,ty,0) && image.getInt(tx,ty,0)==0 && image.getInt(tx,ty,c) > 0) {
+                                    q.add(new int[] {tx,ty});
+                                    mask.setInt(tx,ty,0,1);
+                                }
+                                tx = cx-1; ty = cy+1;
+                                if(image.isInBounds(tx,ty,0) && image.getInt(tx,ty,0)==0 && image.getInt(tx,ty,c) > 0) {
+                                    q.add(new int[] {tx,ty});
+                                    mask.setInt(tx,ty,0,1);
+                                }
+                                tx = cx+1; ty = cy-1;
+                                if(image.isInBounds(tx,ty,0) && image.getInt(tx,ty,0)==0 && image.getInt(tx,ty,c) > 0) {
+                                    q.add(new int[] {tx,ty});
+                                    mask.setInt(tx,ty,0,1);
+                                }
+                                tx = cx-1; ty = cy-1;
+                                if(image.isInBounds(tx,ty,0) && image.getInt(tx,ty,0)==0 && image.getInt(tx,ty,c) > 0) {
+                                    q.add(new int[] {tx,ty});
+                                    mask.setInt(tx,ty,0,1);
+                                }
+                            }
+                        }
+                        blobs.add(blob);
+                    }
+                }
+            }
+        }
+        return blobs;
+    }
+
+
+    /////////////////////////////////////////////////
+    //             General Operations              //
+    /////////////////////////////////////////////////
+    /**
      * Halves the width and height of the {@link Image}. Optimised for this specific use case.
      * @param image The {@link Image} to resize.
      * @return A new {@link Image}.
      */
-    public static Image halve(Image image) {
+    public static Image downscale2x(Image image) {
         int w = image.getWidth() >> 1;
         int h = image.getHeight() >> 1;
-        Layer<?> layer = new Layer<>(Operation.class, "halve", true, Pair.of(w, h));
+        Layer<?> layer = new Layer<>(Operation.class, "downscale2x", true, Pair.of(w, h));
+        if (image.hasSlowLayer()) {
+            image = image.evaluate();
+        }
+
         return new Operation(image, layer, w, h, image.getDepth()) {
             @Override
             public int applyOp(List<Image> images, int x, int y, int c) {
@@ -160,9 +433,27 @@ public class Operations {
             }
         };
     }
-
     /**
-     * Resize this image to the given width/height
+     * Doubles the width and height of the {@link Image}. Optimised for this specific use case.
+     * @param image The {@link Image} to resize.
+     * @return A new {@link Image}.
+     */
+    public static Image upscale2x(Image image) {
+        int w = image.getWidth() << 1;
+        int h = image.getHeight() << 1;
+        Layer<?> layer = new Layer<>(Operation.class, "upscale2x", false, Pair.of(w, h));
+        return new Operation(image, layer, w, h, image.getDepth()) {
+            @Override
+            public int applyOp(List<Image> images, int x, int y, int c) {
+                Image image = images.get(0);
+                int xx = x >> 1;
+                int yy = y >> 1;
+                return image.getInt(xx,yy,c);
+            }
+        };
+    }
+    /**
+     * Resize this image to the given width/height.
      * @param w the new width, if negative flips the Img, if null maintains aspect ratio
      * @param h the new height, if negative flips the Img, if null maintains aspect ratio
      */
@@ -190,7 +481,7 @@ public class Operations {
         }
     }
     /**
-     * Resize this image to the given width
+     * Resize this image to the given width.
      * @param w the new width
      */
     public static Image resizeHorizontal(Image image, Integer w) {
@@ -224,7 +515,7 @@ public class Operations {
         }
     }
     /**
-     * Resize this image to the given height
+     * Resize this image to the given height.
      * @param h the new height
      */
     public static Image resizeVertical(Image image, Integer h) {
@@ -258,7 +549,7 @@ public class Operations {
         }
     }
     /**
-     * Adjust the size of the image by a ratio
+     * Adjust the size of the image by a ratio.
      * @param w the ratio to adjust the width by
      * @param h the ratio to adjust the height by
      */
@@ -266,8 +557,48 @@ public class Operations {
         return resize(image, (int)(image.getWidth()*w), (int)(image.getHeight()*h));
     }
     private static double interpolate(double a, double b, double ratioFromA) {
-        return (b-a) * ratioFromA + a;
+        return (b-a) * ratioFromA + a; // todo remove this duplicate
     }
+    /**
+     * Crops an area of the image. This is the same as {@link ImageROI}.
+     * @param image The image to crop
+     * @param x The starting x coordinate
+     * @param w The width of the cropped image
+     * @param y The starting y coordinate
+     * @param h The height of the cropped image
+     * @param c The starting channel
+     * @param d The depth of the cropped image
+     * @return A cropped image
+     */
+    public static Image crop(Image image, int x, int w, int y, int h, int c, int d) {
+        return new ImageROI(image, x, w, y, h, c, d);
+    }
+    /**
+     * Adds padding around the image. The resulting image is
+     * square and has a width/height that is big enough to fit the original
+     * image but also a power of 2.
+     * @return
+     */
+    public Image squareifyPow2(Image image) {
+        int newWH = nextPow2(Math.max(image.getWidth(), image.getHeight()));
+        int xPos = (newWH - image.getWidth()) / 2;
+        int yPos = (newWH - image.getHeight()) / 2;
+        int xPos2 = xPos + image.getWidth();
+        int yPos2 = yPos + image.getHeight();
+
+        Layer<Pair<Integer, Integer>> layer = new Layer<>(Operation.class, "squareifyPow2", false, null);
+        return new Operation(image, layer, newWH, newWH, image.getDepth()) {
+            @Override
+            public int applyOp(List<Image> images, int x, int y, int c) {
+                if (xPos < x  && x < xPos2 && yPos < y  && y < yPos2) {
+                    return images.get(1).getInt(x-xPos, y-yPos, c);
+                } else {
+                    return 0;
+                }
+            }
+        };
+    }
+
 
     /**
      * Rotate the image by a specified amount. Pads the corners to avoid cropping the Image.
@@ -298,10 +629,13 @@ public class Operations {
             yShift = (int) -(maxY-minY);
         } else {
             xShift = 0;
-            yShift = (int) -(p2[1]-p1[1]);;
+            yShift = (int) -(p2[1]-p1[1]);
         }
 
         Layer<?> layer = new Layer<>(Operation.class, "rotate", true, rad);
+        if (image.hasSlowLayer()) {
+            image = image.evaluate();
+        }
 
         return new Operation(image, layer, (int)(maxX-minX)-1, (int)(maxY-minY)-1, image.getDepth()) {
             @Override
@@ -368,6 +702,11 @@ public class Operations {
         return image;
     }
 
+    /**
+     * Converts the given {@link Image} into greyscale by averaging the values of all the channels into a single channel.
+     * @param image The {@link Image} to convert
+     * @return The greyscale {@link Image}
+     */
     public static Image toGreyscale(Image image) {
         Layer<?> layer = new Layer<>(Operation.class, "greyscale", false, null);
 
@@ -407,7 +746,7 @@ public class Operations {
 
 
     /////////////////////////////////////////////////
-    //            Subpixel Operations              //
+    //             Subpixel Operations             //
     /////////////////////////////////////////////////
     public static SubpixelOperation add(Image image, int val) {
         Layer<?> layer = new Layer<>(SubpixelOperation.class, "add", false, ""+val);
@@ -548,21 +887,287 @@ public class Operations {
         };
     }
 
-    private static void assertImagesAreSameShape(Image image1, Image image2) {
-        if (image1.getWidth() != image2.getWidth()) {
-            throw new IllegalArgumentException("Unable to subtract images. Widths are different sizes.");
-        }
-        if (image1.getHeight() != image2.getHeight()) {
-            throw new IllegalArgumentException("Unable to subtract images. Heights are different sizes.");
-        }
-        if (image1.getDepth() != image2.getDepth()) {
-            throw new IllegalArgumentException("Unable to subtract images. Depths are different sizes.");
-        }
+    public static SubpixelOperation min(Image image, int val) {
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, ""+val);
+        return new SubpixelOperation(image, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return Math.min(imageRead.getInt(i), val);
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return Math.min(imageRead.getInt(x,y,c), val);
+            }
+        };
+    }
+    public static SubpixelOperation min(Image image1, Image image2) {
+        assertImagesAreSameShape(image1, image2);
+
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, "Img");
+        return new SubpixelOperation(image1, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return Math.min(imageRead.getInt(i), image2.getInt(i));
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return Math.min(imageRead.getInt(x,y,c), image2.getInt(x,y,c));
+            }
+        };
     }
 
+    public static SubpixelOperation max(Image image, int val) {
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, ""+val);
+        return new SubpixelOperation(image, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return Math.max(imageRead.getInt(i), val);
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return Math.max(imageRead.getInt(x,y,c), val);
+            }
+        };
+    }
+    public static SubpixelOperation max(Image image1, Image image2) {
+        assertImagesAreSameShape(image1, image2);
+
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, "Img");
+        return new SubpixelOperation(image1, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return Math.max(imageRead.getInt(i), image2.getInt(i));
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return Math.max(imageRead.getInt(x,y,c), image2.getInt(x,y,c));
+            }
+        };
+    }
+
+    public static SubpixelOperation equalTo(Image image, int val) {
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, ""+val);
+        return new SubpixelOperation(image, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) == val ? 1 : 0;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) == val ? 1 : 0;
+            }
+        };
+    }
+    public static SubpixelOperation equalTo(Image image1, Image image2) {
+        assertImagesAreSameShape(image1, image2);
+
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, "Img");
+        return new SubpixelOperation(image1, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) == image2.getInt(i) ? 1 : 0;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) == image2.getInt(x,y,c) ? 1 : 0;
+            }
+        };
+    }
+
+    public static SubpixelOperation greaterThan(Image image, int val) {
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, ""+val);
+        return new SubpixelOperation(image, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) > val ? 1 : 0;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) > val ? 1 : 0;
+            }
+        };
+    }
+    public static SubpixelOperation greaterThan(Image image1, Image image2) {
+        assertImagesAreSameShape(image1, image2);
+
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, "Img");
+        return new SubpixelOperation(image1, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) > image2.getInt(i) ? 1 : 0;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) > image2.getInt(x,y,c) ? 1 : 0;
+            }
+        };
+    }
+
+    public static SubpixelOperation greaterThanEq(Image image, int val) {
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, ""+val);
+        return new SubpixelOperation(image, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) >= val ? 1 : 0;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) >= val ? 1 : 0;
+            }
+        };
+    }
+    public static SubpixelOperation greaterThanEq(Image image1, Image image2) {
+        assertImagesAreSameShape(image1, image2);
+
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, "Img");
+        return new SubpixelOperation(image1, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) >= image2.getInt(i) ? 1 : 0;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) >= image2.getInt(x,y,c) ? 1 : 0;
+            }
+        };
+    }
+
+    public static SubpixelOperation lessThan(Image image, int val) {
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, ""+val);
+        return new SubpixelOperation(image, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) < val ? 1 : 0;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) < val ? 1 : 0;
+            }
+        };
+    }
+    public static SubpixelOperation lessThan(Image image1, Image image2) {
+        assertImagesAreSameShape(image1, image2);
+
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, "Img");
+        return new SubpixelOperation(image1, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) < image2.getInt(i) ? 1 : 0;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) < image2.getInt(x,y,c) ? 1 : 0;
+            }
+        };
+    }
+
+    public static SubpixelOperation lessThanEq(Image image, int val) {
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, ""+val);
+        return new SubpixelOperation(image, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) <= val ? 1 : 0;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) <= val ? 1 : 0;
+            }
+        };
+    }
+    public static SubpixelOperation lessThanEq(Image image1, Image image2) {
+        assertImagesAreSameShape(image1, image2);
+
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, "Img");
+        return new SubpixelOperation(image1, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) <= image2.getInt(i) ? 1 : 0;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) <= image2.getInt(x,y,c) ? 1 : 0;
+            }
+        };
+    }
+
+    public static SubpixelOperation mod(Image image, int val) {
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, ""+val);
+        return new SubpixelOperation(image, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) % val;
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) % val;
+            }
+        };
+    }
+    public static SubpixelOperation mod(Image image1, Image image2) {
+        assertImagesAreSameShape(image1, image2);
+
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, "Img");
+        return new SubpixelOperation(image1, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return imageRead.getInt(i) % image2.getInt(i);
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return imageRead.getInt(x,y,c) % image2.getInt(x,y,c);
+            }
+        };
+    }
+
+    public static SubpixelOperation interpolate(Image image, int val, double ratioFromLeft) {
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, ""+val);
+        return new SubpixelOperation(image, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return (int) interpolate(imageRead.getInt(i), val, ratioFromLeft);
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return (int) interpolate(imageRead.getInt(x,y,c), val, ratioFromLeft);
+            }
+        };
+    }
+    public static SubpixelOperation interpolate(Image image1, Image image2, double ratioFromLeft) {
+        assertImagesAreSameShape(image1, image2);
+
+        Layer<?> layer = new Layer<>(SubpixelOperation.class, "divide", false, "Img");
+        return new SubpixelOperation(image1, layer) {
+            @Override
+            public int applyOp(Image imageRead, int i) {
+                return (int) interpolate(imageRead.getInt(i), image2.getInt(i), ratioFromLeft);
+            }
+
+            @Override
+            public int applyOp(Image imageRead, int x, int y, int c) {
+                return (int) interpolate(imageRead.getInt(x,y,c), image2.getInt(x,y,c), ratioFromLeft);
+            }
+        };
+    }
 
     /////////////////////////////////////////////////
-    //          Concatenation Operations           //
+    //          Image Joining Operations           //
     /////////////////////////////////////////////////
     public static Image concatHorizontally(List<Image> images) {
         Set<Integer> heights = images.stream().map(Image::getHeight).collect(Collectors.toSet());
@@ -645,6 +1250,27 @@ public class Operations {
         };
     }
 
+    public static Image overlay(Image base, Image overlay, int xPos, int yPos) {
+        int xPos2 = xPos + overlay.getWidth();
+        int yPos2 = yPos + overlay.getHeight();
+
+        if(xPos2 > base.getWidth() || yPos2 > base.getHeight())
+            throw new RuntimeException("Overlayed image too large to fit");
+
+        Layer<Pair<Integer, Integer>> layer = new Layer<>(Operation.class, "overlay", false, Pair.of(xPos, yPos));
+
+        return new Operation(asList(base, overlay), layer, base.getWidth(), base.getHeight(), base.getDepth()) {
+            @Override
+            public int applyOp(List<Image> images, int x, int y, int c) {
+                if (xPos < x  && x < xPos2 && yPos < y  && y < yPos2) {
+                    return images.get(1).getInt(x-xPos, y-yPos, c);
+                } else {
+                    return images.get(0).getInt(x, y, c);
+                }
+            }
+        };
+    }
+
     private static int[][] calculateIndexMappings(List<Integer> sizes) {
         int[] imageIndexMap = new int[sizes.stream().mapToInt(i->i).sum()];
         int[] depthIndexMap = new int[imageIndexMap.length];
@@ -656,6 +1282,39 @@ public class Operations {
             }
         }
         return new int[][] {imageIndexMap, depthIndexMap};
+    }
+
+
+    /////////////////////////////////////////////////
+    //               Utility Methods               //
+    /////////////////////////////////////////////////
+    /**
+     * Calculates the next power of 2 greater than the given number.
+     * @param i
+     * @return
+     */
+    private static int nextPow2(int i) {
+        if(i < 0) return -1;
+        int out = -2147483648;
+        while((i&out)==0)
+            out = out >>> 1;
+        return (((out-1)&i) != 0) ? out<<1 : out;
+    }
+
+    private boolean compGT(Integer i) {
+        return i!=null && i>0;
+    }
+
+    private static void assertImagesAreSameShape(Image image1, Image image2) {
+        if (image1.getWidth() != image2.getWidth()) {
+            throw new IllegalArgumentException("Unable to subtract images. Widths are different sizes.");
+        }
+        if (image1.getHeight() != image2.getHeight()) {
+            throw new IllegalArgumentException("Unable to subtract images. Heights are different sizes.");
+        }
+        if (image1.getDepth() != image2.getDepth()) {
+            throw new IllegalArgumentException("Unable to subtract images. Depths are different sizes.");
+        }
     }
 
 }

@@ -45,7 +45,7 @@ public class ImageROI implements WriteableImage {
     @Override
     public List<Layer<?>> getLayers() {
         List<Layer<?>> layers = image.getLayers();
-        layers.add(new Layer<>(getClass(), null, false, asList(x,y,c, w,h,d)));
+        layers.add(new Layer<>(getClass(), "ROI", false, asList(x,y,c, w,h,d)));
         return layers;
     }
 

@@ -90,6 +90,10 @@ public class Viewer extends JFrame {
 		return showAll(DEFAULT_TITLE, images);
 	}
 
+	/**
+	 * Prints the image pixels to the console. (WARNING: it will attempt to print large images)
+	 * @param image The image to print
+	 */
 	public static void print(Image image) {
 		for (int k = 0; k < image.getDepth(); k++) {
 			for (int j = 0; j < image.getHeight(); j++) {
