@@ -22,8 +22,8 @@ public class Blob implements Iterable<int[]> {
 	private int minX = Integer.MAX_VALUE, maxX = 0;
 	private long sumY = 0;
 	private int minY = Integer.MAX_VALUE, maxY = 0;
-	private List<Long> points = new ArrayList<>();
-	private Set<Long> pointsSet = new HashSet<>();
+	private final List<Long> points = new ArrayList<>();
+	private final Set<Long> pointsSet = new HashSet<>();
 	
 	/**
 	 * Add a new point to this blob.
@@ -176,7 +176,7 @@ public class Blob implements Iterable<int[]> {
 	 * @return 
 	 */
 	public double getAxisDensity() {
-		return getSize()/(double)(getMinorAxis()*getMajorAxis());
+		return getSize() / (getMinorAxis()*getMajorAxis());
 	}
 	
 	private Double covCacheXY = null;
