@@ -1,21 +1,12 @@
 package maintest;
 
 
-import sauds.image.tools.Img;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import sauds.image.tools.external.AdvancedxMaths;
-import sauds.image.tools.Blob;
-import sauds.image.tools.external.FrameTimer;
-import sauds.image.tools.ImgInterface;
-import sauds.image.tools.ImgViewer;
-import sauds.image.tools.Kernel;
-import sauds.image.tools.external.ProfilingTools;
-import sauds.image.tools.ROI;
 import sauds.toolbox.multiprocessing.tools.MPT;
 import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
 import sauds.toolbox.timer.Timer;
@@ -25,14 +16,12 @@ import sauds.toolbox.timer.Timer;
  * @author saud
  */
 public class Test {
-    
+    /*
     public static void main(String[] args) throws IOException, InterruptedException {
 		System.out.println("waiting");
 		//System.out.println(Arrays.toString(AdvancedxMaths.rref(-3+Math.sqrt(11), 2, 1, 3+Math.sqrt(11))));
 		//testImgIconWrapper();
-		
-		Img im = Img.createNew(new File("C:\\Users\\demon\\Pictures\\SimplePhotoConverter\\IMG_0059.png"));
-		im.removeBadPixels().save("png", new File("C:\\Users\\demon\\Pictures\\SimplePhotoConverter\\IMG_0059_2.png"));
+		testRegionBlur();
     }
     
     public static void test1b() throws IOException {
@@ -68,7 +57,7 @@ public class Test {
 		Img im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\New Bitmap Image.jpg"));
 		/*ArrayList<Img> lap = im1.laplacianPyramid(4);
 		//Img2.showImgs(lap);
-		Img.showImgs(Img.laplacianPyramid(lap));*/
+		Img.showImgs(Img.laplacianPyramid(lap));*
     }
 	
     private static void test3() throws IOException {
@@ -115,7 +104,7 @@ public class Test {
 		for(int i=0; i<im3.getChannels(); i++)
 			im3.convolve(Kernel.boxBlur(9), i, Img.BORDER_IGNORE, 1, -1);
 		}
-		Img.showImgs(im4.upscale(4), im3.upscale(4));*/
+		Img.showImgs(im4.upscale(4), im3.upscale(4));*
 
 		// downscale
 		//Img2.showImgs(im.downScale2x().downScale2x().upscale(4),
@@ -256,4 +245,21 @@ public class Test {
 		im1.show();
 	}
 	
+	private static void testRegionBlur() throws IOException {
+		Img im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\IMG_0307.png"));
+		Img im2 = im1.convolve(Kernel.boxBlur(2), Img.BORDER_IGNORE, 1, Img.CONV_MEDIAN);
+		Img imX = im2.convolve(Kernel.sobelX(), Img.BORDER_IGNORE, 1, Img.CONV_MEAN, true, 0);
+		Img imY = im2.convolve(Kernel.sobelY(), Img.BORDER_IGNORE, 1, Img.CONV_MEAN, true, 0);
+		Img im3 = (Img) imX.add(imY);
+		ROI im3r = new ROI(0,-1,0,-1,0,1,im3), im3g = new ROI(0,-1,0,-1,1,1,im3), im3b = new ROI(0,-1,0,-1,2,1,im3);
+		im3r.runOp(new ImgInterface.Op() {
+			@Override
+			public int run(int threadID, int pos, int prevVal) {
+				return prevVal + im3g.getInt(pos) + im3b.getInt(pos);
+			}
+		});
+		//im3 = (Img) im3.greaterThanEq(10).mult(255);
+		im3.show();
+	}
+	*/
 }
