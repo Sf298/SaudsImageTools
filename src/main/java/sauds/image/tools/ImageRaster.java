@@ -1,4 +1,4 @@
-package sauds.image.tools2;
+package sauds.image.tools;
 
 import org.apache.commons.lang3.tuple.Triple;
 import sauds.toolbox.multiprocessing.tools.MPT;

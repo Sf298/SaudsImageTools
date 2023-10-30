@@ -1,4 +1,4 @@
-package sauds.image.tools2;
+package sauds.image.tools;
 
 public interface WriteableImage extends Image {
 

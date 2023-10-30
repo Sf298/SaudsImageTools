@@ -1,17 +1,7 @@
 package maintest;
 
-import sauds.image.tools2.*;
-
-import javax.swing.Timer;
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 public class ImageDedupe2 {
 

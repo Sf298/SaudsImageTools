@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package sauds.image.tools2;
+package sauds.image.tools;
 
 import javax.swing.*;
 import java.awt.*;

@@ -1,4 +1,4 @@
-package sauds.image.tools2;
+package sauds.image.tools;
 
 import org.junit.Test;
 

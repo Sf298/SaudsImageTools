@@ -1,4 +1,4 @@
-package sauds.image.tools2;
+package sauds.image.tools;
 
 import java.util.Arrays;
 
