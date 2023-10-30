@@ -1,21 +1,12 @@
 package maintest;
 
 
-import sauds.image.tools.Img;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import sauds.image.tools.external.AdvancedxMaths;
-import sauds.image.tools.Blob;
-import sauds.image.tools.external.FrameTimer;
-import sauds.image.tools.ImgInterface;
-import sauds.image.tools.ImgViewer;
-import sauds.image.tools.Kernel;
-import sauds.image.tools.external.ProfilingTools;
-import sauds.image.tools.ROI;
 import sauds.toolbox.multiprocessing.tools.MPT;
 import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
 import sauds.toolbox.timer.Timer;
@@ -25,7 +16,7 @@ import sauds.toolbox.timer.Timer;
  * @author saud
  */
 public class Test {
-    
+    /*
     public static void main(String[] args) throws IOException, InterruptedException {
 		System.out.println("waiting");
 		//System.out.println(Arrays.toString(AdvancedxMaths.rref(-3+Math.sqrt(11), 2, 1, 3+Math.sqrt(11))));
@@ -66,7 +57,7 @@ public class Test {
 		Img im1 = Img.createNew(new File("C:\\Users\\demon\\Desktop\\New Bitmap Image.jpg"));
 		/*ArrayList<Img> lap = im1.laplacianPyramid(4);
 		//Img2.showImgs(lap);
-		Img.showImgs(Img.laplacianPyramid(lap));*/
+		Img.showImgs(Img.laplacianPyramid(lap));*
     }
 	
     private static void test3() throws IOException {
@@ -113,7 +104,7 @@ public class Test {
 		for(int i=0; i<im3.getChannels(); i++)
 			im3.convolve(Kernel.boxBlur(9), i, Img.BORDER_IGNORE, 1, -1);
 		}
-		Img.showImgs(im4.upscale(4), im3.upscale(4));*/
+		Img.showImgs(im4.upscale(4), im3.upscale(4));*
 
 		// downscale
 		//Img2.showImgs(im.downScale2x().downScale2x().upscale(4),
@@ -270,5 +261,5 @@ public class Test {
 		//im3 = (Img) im3.greaterThanEq(10).mult(255);
 		im3.show();
 	}
-	
+	*/
 }

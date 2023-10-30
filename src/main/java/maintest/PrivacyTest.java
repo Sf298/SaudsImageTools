@@ -13,8 +13,6 @@ import java.io.File;
 import java.io.IOException;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import sauds.image.tools.Img;
-import sauds.image.tools.external.FrameTimer;
 import sauds.toolbox.multiprocessing.tools.MPT;
 
 /**
@@ -24,7 +22,7 @@ import sauds.toolbox.multiprocessing.tools.MPT;
 public class PrivacyTest {
 	
 	public static void main(String[] args) throws IOException, InterruptedException {
-		Img im = Img.createNew(new File("C:\\Users\\demon\\Desktop\\Long Term Store\\Dx7UUM2XQAA9cf7.jpg"));
+		/*Img im = Img.createNew(new File("C:\\Users\\demon\\Desktop\\Long Term Store\\Dx7UUM2XQAA9cf7.jpg"));
 		MyCanvas mc =  new MyCanvas(im, 4);
 		
 		JFrame frame = new JFrame();
@@ -39,12 +37,12 @@ public class PrivacyTest {
 				frame.repaint();
 			}
 		};
-		ft.start();
+		ft.start();*/
 	}
 	
 	private static class MyCanvas extends JComponent {
 		
-		private Image im;
+		/*private Image im;
 		private Image[][] bim;
 		private int fNo = 0;
 		private int gridSize;
@@ -84,7 +82,7 @@ public class PrivacyTest {
 			}
 			
 			fNo++;
-		}
+		}*/
 		
 	}
 	

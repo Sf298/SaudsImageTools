@@ -14,10 +14,6 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import sauds.image.tools.Img;
-import sauds.image.tools.ImgInterface;
-import sauds.image.tools.ImgViewer;
-import sauds.image.tools.ROI;
 import sauds.toolbox.multiprocessing.tools.MPT;
 import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
 
@@ -32,7 +28,7 @@ import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
  * @author saud
  */
 public class Experiments {
-	
+	/*
 	public static void main(String[] args) throws Exception {
 		colorRemovalExpt2(	"C:\\Users\\demon\\Desktop\\TEMP\\Temp2.png",
 							"C:\\Users\\demon\\Desktop\\TEMP\\Temp1.png");
@@ -159,5 +155,5 @@ public class Experiments {
 		});
 		return out;
 	}
-	
+	*/
 }

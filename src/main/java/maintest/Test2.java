@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class Test2 {
-
+/*
     public static void main(String[] args) throws IOException {
         long start;
 
@@ -21,17 +21,17 @@ public class Test2 {
         System.out.println("Old time: " + (System.currentTimeMillis() - start));
         sauds.image.tools.ImgViewer.showAll("OLD", im1);
 
-        IImgRead newImg = Img.create(new File("/home/saud/Pictures/IMG_20220504_205722__01.jpg"));
+        Image newImage = ImageRaster.create(new File("/home/saud/Pictures/IMG_20220504_205722__01.jpg"));
         Kernel kernel = Kernel.gaussian3x3();
         start = System.currentTimeMillis();
-        newImg = ImgOp.convolve(newImg, BorderHandling.EXTEND, Aggregator.MEAN, kernel);
-        newImg = ImgOp.convolve(newImg, BorderHandling.EXTEND, Aggregator.MEAN, kernel);
-        newImg = ImgOp.convolve(newImg, BorderHandling.EXTEND, Aggregator.MEAN, kernel);
-        newImg = ImgSubpixelOp.abs(newImg);
-        newImg.getLayers().forEach(System.out::println);
-        newImg.toBufferedImage();
+        newImage = Operation.convolve(newImage, BorderHandling.EXTEND, kernel, Aggregator.MEAN, 1, 1);
+        newImage = Operation.convolve(newImage, BorderHandling.EXTEND, kernel, Aggregator.MEAN, 1, 1);
+        newImage = Operation.convolve(newImage, BorderHandling.EXTEND, kernel, Aggregator.MEAN, 1, 1);
+        newImage = SubpixelOperation.abs(newImage);
+        newImage.getLayers().forEach(System.out::println);
+        newImage.toBufferedImage();
         System.out.println("New time: " + (System.currentTimeMillis() - start));
-        ImgViewer.showAll("new", newImg);
+        Viewer.showAll("new", newImage);
     }
-
+*/
 }
