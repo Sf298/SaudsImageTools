@@ -4,6 +4,7 @@ public enum BorderHandling {
 
     /**
      * Behaves like the unchecked get(). Mainly used for optimising the convolution function.
+     * Using this will result in an image 2 pixels smaller in each axis than the original.
      */
     INNER,
 
