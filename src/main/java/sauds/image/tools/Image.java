@@ -305,7 +305,8 @@ public interface Image {
 
     /**
      * Save the Img into a file.
-     * @param formatName a String containing the informal name of the format.
+     * @param formatName a String containing the informal name of the format. Same as
+     *                   in {@link ImageIO#write}.
      * @param f The file to save to.
      * @exception IllegalArgumentException if any parameter is
      * <code>null</code>.
