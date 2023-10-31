@@ -55,9 +55,9 @@ public class ImageRaster implements WriteableImage {
         out.values = new byte[width * height * channels];
 
         int x = 0;
-        for (int k = 0; k < channels; k++) {
-            for (int j = 0; j < height; j++) {
-                for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            for (int i = 0; i < width; i++) {
+                for (int k = 0; k < channels; k++) {
                     out.values[x] = mapper.apply(Triple.of(i,j,k));
                     x++;
                 }

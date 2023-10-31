@@ -10,9 +10,9 @@ public class ImageTest {
     public void testTo1D() {
         Image image = ImageRaster.create(3, 4, 5);
         int counter = 0;
-        for (int k = 0; k < image.getDepth(); k++) {
-            for (int j = 0; j < image.getHeight(); j++) {
-                for (int i = 0; i < image.getWidth(); i++) {
+        for (int j = 0; j < image.getHeight(); j++) {
+            for (int i = 0; i < image.getWidth(); i++) {
+                for (int k = 0; k < image.getDepth(); k++) {
                     int actual = image.to1D(i,j,k);
                     System.out.printf("(%d,%d,%d) E: %d, A: %d\n", i,j,k, counter, actual);
                     assertThat(actual).isEqualTo(counter);
