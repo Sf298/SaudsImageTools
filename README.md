@@ -2,7 +2,7 @@
 Saud's Image Tools is a powerful, multithreaded image editing library written in pure Java,
 designed to simplify image processing tasks while offering a wide array of advanced features.
 Whether you're an image editing enthusiast or a developer looking to integrate robust image
-processing capabilities into your project, Saud's Image Tools has you covered.
+processing capabilities into your project, this library has you covered!
 
 Key Features:
 - Efficiency Unleashed: My library, wraps each image in a base object, like ```ImageRaster```. 
