@@ -453,6 +453,13 @@ public class Operations {
         };
     }
     /**
+     * Resize this image to the width and height of the given image.
+     * @param shape The image whose width and height should be copied
+     */
+    public static Image resizeTo(Image imageToResize, Image shape) {
+        return resize(imageToResize, shape.getWidth(), shape.getHeight());
+    }
+    /**
      * Resize this image to the given width/height.
      * @param w the new width, if negative flips the Img, if null maintains aspect ratio
      * @param h the new height, if negative flips the Img, if null maintains aspect ratio
