@@ -258,7 +258,6 @@ public interface Image {
             for(int x=0; x<getWidth(); x++) {
                 Color col = getColor(x, y);
                 out.setRGB(x, y, col.getRGB());
-                System.out.println(col);
             }
         });
         return out;

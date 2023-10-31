@@ -20,24 +20,12 @@ public class OperationsTest {
     @Test
     public void testConvolution_separable() {
         Image img = ImageRaster.create(3,3,2, new byte[] {
-                10, 20, 30,
-                40, 50, 60,
-                70, 80, 90,
-
-                20, 30, 40,
-                50, 60, 70,
-                80, 90, 100
+                10,20,20,30,30,40,40,50,50,60,60,70,70,80,80,90,90,100
         });
         Image output = Operations.convolve(img, BorderHandling.IGNORE, Kernel.boxBlur(5), Aggregator.MEAN, 1, 1);
         int[] actual = output.evaluate().getValuesInt();
         int[] expected = new int[] {
-                50, 50, 50,
-                50, 50, 50,
-                50, 50, 50,
-
-                60, 60, 60,
-                60, 60, 60,
-                60, 60, 60,
+                50,60,50,60,50,60,50,60,50,60,50,60,50,60,50,60,50,60
         };
         assertThat(actual).isEqualTo(expected);
     }
@@ -45,25 +33,11 @@ public class OperationsTest {
     @Test
     public void testConvolution_notSeparable() {
         Image img = ImageRaster.create(3,3,2, new byte[] {
-                10, 20, 30,
-                40, 50, 60,
-                70, 80, 90,
-
-                20, 30, 40,
-                50, 60, 70,
-                80, 90, 100
+                10,20,20,30,30,40,40,50,50,60,60,70,70,80,80,90,90,100
         });
         Image output = Operations.convolve(img, BorderHandling.IGNORE, Kernel.gaussian3x3(), Aggregator.MEAN, 1, 1);
         int[] actual = output.evaluate().getValuesInt();
-        int[] expected = new int[] {
-                52, 60, 82,
-                86, 88, 113,
-                142, 140, 172,
-
-                75, 80, 105,
-                106, 106, 133,
-                165, 160, 195
-        };
+        int[] expected = new int[] { 52,75,60,80,82,105,86,106,88,106,113,133,142,165,140,160,172,195 };
         assertThat(actual).isEqualTo(expected);
     }
 
