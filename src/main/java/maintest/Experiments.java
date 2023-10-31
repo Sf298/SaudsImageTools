@@ -1,10 +1,7 @@
 package maintest;
 
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.GridLayout;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import javax.swing.ImageIcon;
@@ -14,8 +11,13 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import sauds.image.tools.*;
+import sauds.image.tools.Image;
 import sauds.toolbox.multiprocessing.tools.MPT;
 import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
+
+import static java.util.Arrays.asList;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -28,10 +30,10 @@ import sauds.toolbox.multiprocessing.tools.MTPListRunnable;
  * @author saud
  */
 public class Experiments {
-	/*
+
 	public static void main(String[] args) throws Exception {
-		colorRemovalExpt2(	"C:\\Users\\demon\\Desktop\\TEMP\\Temp2.png",
-							"C:\\Users\\demon\\Desktop\\TEMP\\Temp1.png");
+		colorRemovalExpt2(	"/home/saud/Downloads/Unsaved Image 1.jpg",
+							"/home/saud/Downloads/profile-photo.png");
 	}
 
 	private static void colorRemovalExpt1() throws IOException {
@@ -39,8 +41,8 @@ public class Experiments {
 		ImageIcon imgIcon;
 		
 		System.out.println("running");
-		Img tempIm = Img.createNew(new File("C:\\Users\\demon\\Desktop\\TEMP\\Temp1.png"));
-		Img im = (Img) tempIm.resize(null, 250);
+		Image tempIm = ImageRaster.create(new File("C:\\Users\\demon\\Desktop\\TEMP\\Temp1.png"));
+        Image im = Operations.resize(tempIm, null, 250);
 		
 		JFrame frame = new JFrame("Histogram test");
 			
@@ -79,11 +81,13 @@ public class Experiments {
 				int g = gSlider.getValue();
 				int b = bSlider.getValue();
 				System.out.println(r+", "+g+", "+b);
-				Img out = im.copy();
-				new ROI(0, -1, 0, -1, 0, 1, out).add(r);
-				new ROI(0, -1, 0, -1, 1, 1, out).add(g);
-				new ROI(0, -1, 0, -1, 2, 1, out).add(b);
-				
+                Image out = Operations.concatChannels(asList(
+                        Operations.add(new ImageROI(im, 0, -1, 0, -1, 0, 1), r),
+                        Operations.add(new ImageROI(im, 0, -1, 0, -1, 1, 1), g),
+                        Operations.add(new ImageROI(im, 0, -1, 0, -1, 2, 1), b)
+                ));
+
+
 				imgIcon.setImage(out.toBufferedImage());
 				
 				int[][] hists = out.getHistogram();
@@ -108,14 +112,14 @@ public class Experiments {
 		JFrame frame = new JFrame("Histogram test");
 			
 			JPanel mainPanel = new JPanel(new GridLayout(2, 2));
-				
-				Img im1 = Img.createNew(new File(f1));
-				im1 = (Img) im1.resize(null, 250);
+
+				Image im1 = ImageRaster.create(new File(f1));
+                im1 = Operations.resize(im1, null, 250);
 				ImageIcon imgIcon1 = new ImageIcon(im1.toBufferedImage());
 				mainPanel.add(new JLabel(imgIcon1));
-				
-				Img im2 = Img.createNew(new File(f2));
-				im2 = (Img) im2.resizeTo(im1);
+
+                Image im2 = ImageRaster.create(new File(f2));
+                im2 = Operations.resize(im2, null, 250);
 				ImageIcon imgIcon2 = new ImageIcon(im2.toBufferedImage());
 				mainPanel.add(new JLabel(imgIcon2));
 					
@@ -155,5 +159,5 @@ public class Experiments {
 		});
 		return out;
 	}
-	*/
+
 }

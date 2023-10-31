@@ -254,11 +254,11 @@ public interface Image {
         int type = (getDepth() == 3) ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
         BufferedImage out = new BufferedImage(getWidth(), getHeight(), type);
 
-        MPT.run(threadCount, 0, getHeight(), 1, (procID, idx, val) -> {
-            int y = idx;
+        MPT.run(1, 0, getHeight(), 1, (procID, y, val) -> {
             for(int x=0; x<getWidth(); x++) {
                 Color col = getColor(x, y);
                 out.setRGB(x, y, col.getRGB());
+                System.out.println(col);
             }
         });
         return out;
@@ -321,13 +321,13 @@ public interface Image {
     /////////////////////////////////////////////////////
     // source: https://stackoverflow.com/questions/20266201/3d-array-1d-flat-indexing
     default int to1D(int x, int y, int z) {
-        return (z * getWidth() * getHeight()) + (y * getWidth()) + x;
+        return (y * getDepth() * getWidth()) + (x * getDepth()) + z;
     }
     default int[] to3D(int idx) {
-        final int z = idx / (getWidth() * getHeight());
-        idx -= (z * getWidth() * getHeight());
-        final int y = idx / getWidth();
-        final int x = idx % getWidth();
+        final int y = idx / (getDepth() * getWidth());
+        idx -= (y * getDepth() * getWidth());
+        final int x = idx / getDepth();
+        final int z = idx % getDepth();
         return new int[]{ x, y, z };
     }
 
