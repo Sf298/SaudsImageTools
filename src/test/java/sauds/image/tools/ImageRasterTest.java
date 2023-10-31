@@ -35,9 +35,9 @@ public class ImageRasterTest {
         assertThat(img.getHeight()).isEqualTo(h);
         assertThat(img.getDepth()).isEqualTo(d);
         int x=0;
-        for (int k = 0; k < d; k++) {
-            for (int j = 0; j < h; j++) {
-                for (int i = 0; i < w; i++) {
+        for (int j = 0; j < h; j++) {
+            for (int i = 0; i < w; i++) {
+                for (int k = 0; k < d; k++) {
                     assertThat(img.getInt(x)).isEqualTo(i+j+k);
                     x++;
                 }

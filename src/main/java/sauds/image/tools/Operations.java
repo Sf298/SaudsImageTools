@@ -406,6 +406,25 @@ public class Operations {
         return blobs;
     }
 
+    public static Image matchHistogram(Image image, int[][] histogram) {
+        if (image.hasSlowLayer()) {
+            image = image.evaluate();
+        }
+        int[][] valueMappings = calculateHistogramMapping(image.getHistogram(), histogram);
+        return mapValues(image, valueMappings, "match-histogram", histogram);
+    }
+
+    public static Image equaliseHistogram(Image image) {
+        if (image.hasSlowLayer()) {
+            image = image.evaluate();
+        }
+        int[][] imageHistogram = image.getHistogram();
+        int[][] histogram = Arrays.stream(imageHistogram)
+                .map(c -> IntStream.range(0, c.length).toArray())
+                .toArray(int[][]::new);
+        int[][] valueMappings = calculateHistogramMapping(imageHistogram, histogram);
+        return mapValues(image, valueMappings, "equalise-histogram", null);
+    }
 
     /////////////////////////////////////////////////
     //             General Operations              //
@@ -418,10 +437,7 @@ public class Operations {
     public static Image downscale2x(Image image) {
         int w = image.getWidth() >> 1;
         int h = image.getHeight() >> 1;
-        Layer<?> layer = new Layer<>(Operation.class, "downscale2x", true, Pair.of(w, h));
-        if (image.hasSlowLayer()) {
-            image = image.evaluate();
-        }
+        Layer<?> layer = new Layer<>(Operation.class, "downscale2x", false, Pair.of(w, h));
 
         return new Operation(image, layer, w, h, image.getDepth()) {
             @Override
@@ -750,6 +766,35 @@ public class Operations {
                 };
         }
     }
+
+    public static Image mapValues(Image image, int[][] mappingsByChannel) {
+        return mapValues(image, mappingsByChannel, "map-values", mappingsByChannel);
+    }
+    private static <T> Image mapValues(Image image, int[][] mappingsByChannel, String layerName, T layerOptions) {
+        Layer<?> layer = new Layer<>(Operation.class, layerName, false, layerOptions);
+        return new Operation(image, layer, image.getWidth(), image.getHeight(), image.getDepth()) {
+            @Override
+            public int applyOp(List<Image> images, int x, int y, int c) {
+                int val = images.get(0).getInt(x,y,c);
+                return mappingsByChannel[c][val];
+            }
+        };
+    }
+    private static <T> SubpixelOperation mapValues(Image image, int[] mappings, String layerName, T layerOptions) {
+        Layer<?> layer = new Layer<>(Operation.class, layerName, false, layerOptions);
+        return new SubpixelOperation(image, layer) {
+            @Override
+            public int applyOp(Image image, int x, int y, int c) {
+                return mappings[image.getInt(x,y,c)];
+            }
+
+            @Override
+            public int applyOp(Image image, int i) {
+                return mappings[image.getInt(i)];
+            }
+        };
+    }
+
 
 
     /////////////////////////////////////////////////
@@ -1322,6 +1367,38 @@ public class Operations {
         if (image1.getDepth() != image2.getDepth()) {
             throw new IllegalArgumentException("Unable to subtract images. Depths are different sizes.");
         }
+    }
+
+    private static int[][] calculateHistogramMapping(int[][] histogram1, int[][] histogram2) {
+        int[][] out = new int[histogram1.length][];
+        for (int c = 0; c < histogram1.length; c++) {
+            double[] cumulativeHistogram1 = normalise(toCumulativeHistogram(histogram1[c]));
+            double[] cumulativeHistogram2 = normalise(toCumulativeHistogram(histogram2[c]));
+
+            int[] mapping = new int[histogram1[c].length];
+            for (int i = 0; i < histogram1[c].length; i++) {
+                double temp = cumulativeHistogram1[i];
+                //TODO add case where several values match
+                mapping[i] = IntStream.range(0, cumulativeHistogram2.length)
+                        .filter(j -> cumulativeHistogram2[j] >= temp)
+                        .findFirst().orElse(cumulativeHistogram2.length-1);
+            }
+            out[c] = mapping;
+        }
+        return out;
+    }
+
+    private static double[] normalise(int[] values) {
+        double max = Arrays.stream(values).max().orElse(0);
+        return Arrays.stream(values).mapToDouble(v -> v/max).toArray();
+    }
+    private static int[] toCumulativeHistogram(int[] histogram) {
+        int[] out = new int[histogram.length];
+        out[0] = histogram[0];
+        for (int i = 1; i < histogram.length; i++) {
+            out[i] = histogram[i]+out[i-1];
+        }
+        return out;
     }
 
 }
